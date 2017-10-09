@@ -1,0 +1,25 @@
+{
+  "name": "nrfcloud-device-simulator",
+  "version": "1.0.0",
+  "description": "paring simulator for nrfcloud-compatible devices",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NordicSemiconductor/nrfcloud-device-simulator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NordicSemiconductor/nrfcloud-device-simulator/issues"
+  },
+  "homepage": "https://github.com/NordicSemiconductor/nrfcloud-device-simulator#readme",
+  "devDependencies": {
+    "aws-iot-device-sdk": "^2.1.0",
+    "jest": "^21.2.1",
+    "mqtt": "^2.13.0",
+    "pem": "^1.12.0"
+  }
+}
