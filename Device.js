@@ -2,15 +2,14 @@ const fs = require('fs');
 const pem = require('pem');
 
 class Device {
-	constructor(type, pairingMethods) {
+	constructor(type) {
 		if (new.target === Device) {
 			throw new TypeError('Cannot create device without specifying type');
 		}
 
 		this.type = type;
-		this.pairingMethods = pairingMethods;
 		this.deviceId;
-		this.deviceState = 'unknown';		
+		this.pairingMethods;	
 
 		// methods used with simulator
 		this.extractDeviceId = this.extractDeviceId.bind(this);
@@ -31,12 +30,24 @@ class Device {
 		return this.type;
 	}
 
+	getAuthentificationDocuments() {
+		return this.authentificationDocuments;
+	}
+
 	getPairingMethods() {
 		return this.pairingMethods;
 	}
 
-	getAuthentificationDocuments() {
-		return this.authentificationDocuments;
+	setPairingMethods(methods) {
+		this.pairingMethods = methods;
+	}
+
+	createCertificate() {
+		// create it
+	}
+
+	flashCertificate(certificate) {
+		// flash it
 	}
 
 	extractDeviceId() {
@@ -74,6 +85,10 @@ class Device {
 
 	hasDeviceId() {
 		return this.deviceId ? true : false;
+	}
+
+	hasCertificate() {
+		// to be used when we create and flash our own certificates (for now we're just fetching from folder)
 	}
 }
 

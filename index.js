@@ -1,46 +1,29 @@
 const Thingy = require('./Thingy');
 const Pairing = require('./Pairing');
+const Cli = require('./Cli');
 
 const device = new Thingy();
-const pairing = new Pairing(device);
-
+const pairing = new Pairing();
 let cli;
-/*
+
+
+
 if (process.argv[2]) {
-    if (process.argv[2] === 'cli') {
-        cli = true;
-
-        stdin = process.stdin;
-        stdin.setRawMode(true);
-        stdin.resume();
-        stdin.setEncoding('utf8');
-
-        stageInProcess = false;
-
-        stdin.on('data', key => {
-            if (key === '\u0003') {
-                pairing.unsubscribeToTopic('#');
-                process.exit()
-            }
-
-            switch (key) {
-                case 'n':
-                    if (!stageInProcess) {
-                        console.log('complete next step');
-                    }
-                    break;
-
-                default:
-                    break;
-
-            }
-        })
+    const argument = process.argv[2];
+    if (argument === 'cli') {
+        cli = new Cli(pairing);
+    } else {
+        run();
     }
 }
-*/
 
-const main = () => {
+
+
+
+const run = () => {
     device.extractDeviceId()
+    .then(pairing.setDevice(device))
+    .then(pairing.setCloudConfiguration())
     .then(pairing.connect)
     .then(() => {
         console.log("huzzah");
@@ -50,5 +33,3 @@ const main = () => {
         console.log(reason);
     });
 }
-
-main();
