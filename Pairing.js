@@ -27,7 +27,15 @@ class Pairing {
 	}
 
 	setDevice(device) {
-		this.device = device;
+		return new Promise((resolve, reject) => {
+			try {
+				this.device = device;
+				resolve();
+			} catch (e) {
+				console.log('Rejected: Could not set device');
+				reject();
+			}
+		})
 	}
 
 	setCloudConfiguration() {
@@ -50,12 +58,14 @@ class Pairing {
 	}
 
 	connect() {
+		
 		return new Promise((resolve, reject) => {
 			try {
 				this.cloud = awsIot.device(this.cloudConfiguration);
 
 				// Initial subscriptions are placed here instead of the on('connect')
 				// so that we don't resubscribe to the same topics each time we connect
+				console.log(this.device.deviceId);
 				this.subscribeToTopic([
 					`$aws/things/${this.device.deviceId}/shadow/get/accepted`,
 					`$aws/things/${this.device.deviceId}/shadow/get/rejected`,
@@ -86,13 +96,16 @@ class Pairing {
 		    	this.unsubscribeToTopic('#');
             	process.exit();
         	});
+
+        	resolve();
 		})
 	}
 
 	onReceiveMessage(topic, message) {
 		message = JSON.parse(message.toString());
+		console.log("sssss");
 		console.log(message);
-		console.log("--");
+		console.log("sssss");
 		switch (topic) {
 			case `$aws/things/${this.device.deviceId}/shadow/get/accepted`:
 				if (
@@ -108,7 +121,7 @@ class Pairing {
 						case false:
 							if (message.state.reported.pairing.hasOwnProperty('status')) {
 								switch (message.state.reported.pairing.status) {
-									case: 'initiate':
+									case 'initiate':
 										this.STATE = 'INITIATE';
 										break;
 
@@ -254,6 +267,8 @@ class Pairing {
 	}
 
 	getThingShadow() {
+		console.log(this.device.deviceId);
+		console.log("lua");
 		this.publishToTopic(`$aws/things/${this.device.deviceId}/shadow/get`, '');
 	}
 

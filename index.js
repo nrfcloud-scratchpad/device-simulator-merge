@@ -18,13 +18,11 @@ if (process.argv[2]) {
 }
 
 
-
-
 const run = () => {
     device.extractDeviceId()
-    .then(pairing.setDevice(device))
-    .then(pairing.setCloudConfiguration())
-    .then(pairing.connect)
+    .then(() => {pairing.setDevice(device)})
+    .then(() => {pairing.setCloudConfiguration()})
+    .then(() => {pairing.connect()})
     .then(() => {
         console.log("huzzah");
     })
@@ -33,3 +31,5 @@ const run = () => {
         console.log(reason);
     });
 }
+
+run();

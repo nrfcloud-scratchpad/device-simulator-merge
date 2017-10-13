@@ -51,6 +51,7 @@ class Device {
 	}
 
 	extractDeviceId() {
+		
 		return new Promise((resolve, reject) => {
 			fs.readFile(this.authentificationDocumentsFilePaths.deviceCertificate, (err, devCert) => {
 	            if (err) {
@@ -65,7 +66,6 @@ class Device {
 		                    reject();
 		                } else {
 		                    this.deviceId = certificateInformation.commonName;
-
 		                    console.log("Resolved: Read and set device id to: " + this.deviceId);
 		                    resolve();
 		                }
