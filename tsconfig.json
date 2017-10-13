@@ -1,0 +1,29 @@
+{
+    "version": "2.3.4",
+    "compileOnSave": true,
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": true,
+        "target": "es6",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "emitDecoratorMetadata": false,
+        "outDir": "dist/",
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "types": [
+            "node"
+        ],
+        "lib": [
+            "es2016"
+        ],
+        "alwaysStrict": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
