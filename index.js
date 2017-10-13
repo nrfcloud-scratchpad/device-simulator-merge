@@ -1,6 +1,9 @@
 const Thingy = require('./Thingy');
 const Pairing = require('./Pairing');
 const Cli = require('./Cli');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const device = new Thingy();
 const pairing = new Pairing();

@@ -1,9 +1,10 @@
 const awsIot = require('aws-iot-device-sdk');
 const AWS = require('aws-sdk');
+
 AWS.config.update({
-	region: 'us-east-1',
-	accessKeyId: 'AKIAJBNH7Y2KPGXQ4YGA',
-	secretAccessKey: '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'
+	region: process.env.AWS_REGION || 'us-east-1',
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 
 class Pairing {
@@ -53,7 +54,7 @@ class Pairing {
 		            certPath: this.device.authentificationDocumentsFilePaths.deviceCertificate,
 		            caPath: this.device.authentificationDocumentsFilePaths.caCertificate,
 		            clientId: this.device.deviceId,
-		            host: 'a2n7tk1kp18wix.iot.us-east-1.amazonaws.com'
+		            host: process.env.HOST
 				}
 
 				resolve();

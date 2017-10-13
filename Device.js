@@ -20,11 +20,12 @@ class Device {
 		this.hasDeviceId = this.hasDeviceId.bind(this);
 
 		this.authentificationDocumentsFilePaths = {
-			deviceCertificate: 'authentificationDocuments/deviceCertificate.pem.crt',
-			caCertificate: 'authentificationDocuments/caCertificate.pem',
-			deviceCertificatePrivateKey: 'authentificationDocuments/privateKey.pem.key'
+			deviceCertificate: process.env.CERT_PATH,
+			caCertificate: process.env.CA_PATH,
+			deviceCertificatePrivateKey: process.env.KEY_PATH
 		}
 	}
+
 
 	getDeviceType() {
 		return this.type;
