@@ -53,25 +53,8 @@ class Device {
 	extractDeviceId() {
 		
 		return new Promise((resolve, reject) => {
-			fs.readFile(this.authentificationDocumentsFilePaths.deviceCertificate, (err, devCert) => {
-	            if (err) {
-	                console.log("Rejected: Reading device certificate failed");
-	                console.log(err);
-	                reject();
-	            } else {
-					pem.readCertificateInfo(devCert.toString(), (err2, certificateInformation) => {
-		                if (err2) {
-		                    console.log("Rejected: Couldn't read certificate information");
-		                    console.log(err2);
-		                    reject();
-		                } else {
-		                    this.deviceId = certificateInformation.commonName;
-		                    console.log("Resolved: Read and set device id to: " + this.deviceId);
-		                    resolve();
-		                }
-		            })
-		        }
-			})
+			this.deviceId = 'TestThing';
+			resolve();
 		})
 	}
 
