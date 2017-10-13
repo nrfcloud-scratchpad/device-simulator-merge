@@ -20,9 +20,9 @@ class Device {
 		this.hasDeviceId = this.hasDeviceId.bind(this);
 
 		this.authentificationDocumentsFilePaths = {
-			deviceCertificate: process.env.CERT_PATH,
-			caCertificate: process.env.CA_PATH,
-			deviceCertificatePrivateKey: process.env.KEY_PATH
+			deviceCertificate: process.env.CERTIFICATE_PATH,
+			caCertificate: process.env.CA_CERTIFICATE_PATH,
+			deviceCertificatePrivateKey: process.env.PRIVATE_KEY_PATH
 		}
 	}
 
