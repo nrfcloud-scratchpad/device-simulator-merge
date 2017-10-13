@@ -14,11 +14,18 @@ class Pairing {
 		this.device;
 		this.STATE;
 		this.lambda = new AWS.Lambda();
-		this.timeoutTime = 1000;
+		this.timeout;
 
 		// methods used with simulator
 		this.connect = this.connect.bind(this);
 		this.onReceiveMessage = this.onReceiveMessage.bind(this);
+		this.evaluateState = this.evaluateState.bind(this);
+		this.setCloudConfiguration = this.setCloudConfiguration.bind(this);
+		this.setDevice = this.setDevice.bind(this);
+		this.setTimeout = this.setTimeout.bind(this);
+		this.makeNewPairingRequest = this.makeNewPairingRequest.bind(this);
+		this.invokeLambda = this.invokeLambda.bind(this);
+		this.getThingShadow = this.getThingShadow.bind(this);
 
 		// methods used for testing purposes
 		this.hasCloud = this.hasCloud.bind(this);
@@ -199,7 +206,7 @@ class Pairing {
 				break;
 
 			case 'ERROR':
-				this.timeout(this.getThingShadow);
+				this.setTimeout(this.getThingShadow);
 				break;
 
 			default:
@@ -207,8 +214,17 @@ class Pairing {
 		}
 	}
 
-	timeout(cb) {
-		setTimeout(cb, this.timeoutTime);
+	delay(cb) {
+		this.setTimeout().then(() => {
+			cb()
+		})
+	}
+
+	setTimeout(time) {
+		return new Promise(resolve => {
+			this.timeout = setTimeout(resolve, time);
+		})
+		
 	}
 
 	makeNewPairingRequest() {
