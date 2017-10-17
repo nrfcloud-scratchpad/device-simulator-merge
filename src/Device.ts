@@ -1,5 +1,19 @@
-const fs = require('fs');
-const pem = require('pem');
+
+
+interface IDevice {
+    readonly deviceType: string;
+}
+
+
+class LTEDevice implements IDevice {
+    deviceType: string;
+
+    constructor() {
+        this.deviceType = 'a';
+    }
+}
+
+const x = new LTEDevice();
 
 class Device {
     constructor(type) {
