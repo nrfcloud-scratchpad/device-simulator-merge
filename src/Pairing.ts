@@ -8,6 +8,13 @@ AWS.config.update({
 });
 
 class Pairing {
+    cloud: any;
+    cloudConfiguration: { [key: string]: string };
+    qos: number;
+    device: any;
+    STATE: string;
+    lambda: any;
+    timeout: any;
     constructor() {
         this.cloud;
         this.cloudConfiguration;
@@ -22,8 +29,7 @@ class Pairing {
         this.onReceiveMessage = this.onReceiveMessage.bind(this);
         this.evaluateState = this.evaluateState.bind(this);
         this.setCloudConfiguration = this.setCloudConfiguration.bind(this);
-        this.setDevice = this.setDevice.bind(this);
-        this.setTimeout = this.setTimeout.bind(this);
+        this.delay = this.delay.bind(this);
         this.makeNewPairingRequest = this.makeNewPairingRequest.bind(this);
         this.invokeLambda = this.invokeLambda.bind(this);
         this.getThingShadow = this.getThingShadow.bind(this);
@@ -81,7 +87,7 @@ class Pairing {
                 ]);
             } catch (e) {
                 console.log(`Rejected: Error connecting to cloud: ${JSON.stringify(e)}`);
-                reject();
+                reject(e);
             }
             this.cloud.on('connect', () => {
                 console.log('Connected to cloud');
@@ -109,24 +115,24 @@ class Pairing {
 
     onReceiveMessage(topic, message) {
         message = JSON.parse(message.toString());
-        console.log('sssss');
+        console.log(topic);
         console.log(message);
-        console.log('sssss');
         switch (topic) {
             case `$aws/things/${this.device.deviceId}/shadow/get/accepted`:
                 if (
+                    message.hasOwnProperty('state') &&
                     message.state.hasOwnProperty('desired') &&
-                    message.state.reported.hasOwnProperty('pairing') &&
-                    message.state.reported.pairing.hasOwnProperty('paired')
+                    message.state.desired.hasOwnProperty('pairing') &&
+                    message.state.desired.pairing.hasOwnProperty('paired')
                 ) {
-                    switch (message.state.reported.pairing.paired) {
+                    switch (message.state.desired.pairing.paired) {
                         case true:
                             this.STATE = 'PAIRED';
                             break;
 
                         case false:
-                            if (message.state.reported.pairing.hasOwnProperty('status')) {
-                                switch (message.state.reported.pairing.status) {
+                            if (message.state.desired.pairing.hasOwnProperty('status')) {
+                                switch (message.state.desired.pairing.status) {
                                     case 'initiate':
                                         this.STATE = 'INITIATE';
                                         break;
@@ -159,6 +165,7 @@ class Pairing {
                 }
 
                 this.evaluateState();
+                break;
 
                 // react based on device state
             case `$aws/things/${this.device.deviceId}/shadow/get/rejected`:
@@ -205,7 +212,7 @@ class Pairing {
                 break;
 
             case 'ERROR':
-                this.setTimeout(this.getThingShadow);
+                this.delay(this.getThingShadow, 60000);
                 break;
 
             default:
@@ -213,29 +220,35 @@ class Pairing {
         }
     }
 
-    delay(cb) {
-        this.setTimeout().then(() => {
-            cb();
-        });
-    }
-
-    setTimeout(time) {
-        return new Promise(resolve => {
-            this.timeout = setTimeout(resolve, time);
-        });
-    }
+    delay(cb, time) {
+        return new Promise((resolve, reject) => {
+            this.timeout = setTimeout(function() {
+                cb().then(() => {
+                    resolve();
+                })
+                .catch(reason => {
+                    console.log(reason);
+                    reject();
+                });
+            }.bind(this), time);
+            });
+        }
 
     makeNewPairingRequest() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const supportedPairingMethods = this.device.getPairingMethods();
-            const message = {'reported': {'pairingStatus': {'supports': supportedPairingMethods}}};
-            const pairingRequestLambdaConfig = {
+            console.log('pairing methods');
+            console.log(supportedPairingMethods);
+            const message = JSON.stringify({'state': {'reported': {'pairingStatus': {'supports': supportedPairingMethods}}}});
+            console.log(message);
+            /*const pairingRequestLambdaConfig = {
                 FunctionName: 'dua-pairingrequest',
                 InvocationType: 'Event',
-            };
+            };*/
 
             this.publishToTopic(`$aws/things/${this.device.deviceId}/shadow/update`, message);
-
+            resolve();
+            /*
             this.invokeLambda(pairingRequestLambdaConfig)
             .then(() => {
                 console.log('Resolved: Made new pairing request');
@@ -243,8 +256,8 @@ class Pairing {
             })
             .catch(reason => {
                 console.log('Rejected: Making of pairing request failed due to problems with lambda function.');
-                reject();
-            });
+                reject(reason);
+            });*/
         });
     }
 
@@ -281,9 +294,10 @@ class Pairing {
     }
 
     getThingShadow() {
-        console.log(this.device.deviceId);
-        console.log('lua');
-        this.publishToTopic(`$aws/things/${this.device.deviceId}/shadow/get`, '');
+        return new Promise(resolve => {
+            this.publishToTopic(`$aws/things/${this.device.deviceId}/shadow/get`, '');
+            resolve();
+        });
     }
 
     endPairing() {
@@ -304,4 +318,4 @@ class Pairing {
     }
 }
 
-module.exports = Pairing;
+export = Pairing;

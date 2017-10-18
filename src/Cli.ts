@@ -2,6 +2,7 @@ class Cli {
     pairingSession: any;
     stepInProgress: boolean;
     currentStep: number;
+    stdin: any;
     constructor(pairing: typeof Pairing) {
         this.pairingSession = pairing;
         this.stdin = process.stdin;
@@ -18,12 +19,14 @@ class Cli {
             } else {
                 switch (key) {
                     case 'n':
-                        if (!this.stepInProcess) {
-                            this.executeNextStep()
-                            .catch(reason => {
+                        if (!this.stepInProgress) {
+                            try {
+                                this.executeNextStep();
+                            }
+                            catch (error) {
                                 // handle error
-                                console.log(reason);
-                            });
+                                console.log(error);
+                            }
                         }
                         break;
 
@@ -39,6 +42,10 @@ class Cli {
         console.log('Closing session');
         process.exit();
     }
+
+    executeNextStep() {
+        return;
+    }
 }
 
-module.exports = Cli;
+export = Cli;

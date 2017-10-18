@@ -1,8 +1,9 @@
-const fs = require('fs');
-const pem = require('pem');
-
-class Device {
-    constructor(type) {
+export class Device {
+    type: string;
+    deviceId: string;
+    pairingMethods: Array<string>;
+    authentificationDocumentsFilePaths: { [key: string]: string };
+    constructor(type: string) {
         if (new.target === Device) {
             throw new TypeError('Cannot create device without specifying type');
         }
@@ -13,6 +14,7 @@ class Device {
 
         // methods used with simulator
         this.extractDeviceId = this.extractDeviceId.bind(this);
+        this.getPairingMethods = this.getPairingMethods.bind(this);
 
         // methods used for testing purposes
         this.hasType = this.hasType.bind(this);
@@ -26,13 +28,12 @@ class Device {
         };
     }
 
-
     getDeviceType() {
         return this.type;
     }
 
     getAuthentificationDocuments() {
-        return this.authentificationDocuments;
+        return this.authentificationDocumentsFilePaths;
     }
 
     getPairingMethods() {
@@ -40,21 +41,25 @@ class Device {
     }
 
     setPairingMethods(methods) {
-        this.pairingMethods = methods;
+        return new Promise(resolve => {
+            this.pairingMethods = methods;
+            resolve();
+        });
     }
 
     createCertificate() {
         // create it
     }
 
-    flashCertificate(certificate) {
+    flashCertificate() {
         // flash it
     }
 
     extractDeviceId() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
+
             this.deviceId = 'TestThing';
-            resolve();
+            resolve(this.deviceId);
         });
     }
 
@@ -74,5 +79,3 @@ class Device {
         // to be used when we create and flash our own certificates (for now we're just fetching from folder)
     }
 }
-
-module.exports = Device;
