@@ -19,6 +19,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
 
     updatePairingState(state: PairingState): void {
         // Check if pairing state has changed and do appropriate actions
+        this.emit('pairingUpdate', )
         this.pairingState = state;
     }
 
