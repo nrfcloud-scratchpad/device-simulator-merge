@@ -2,13 +2,12 @@ export interface IPairingMethod {
     readonly methodName: string;
     readonly dataLength: number;
 
-    retrievePairingData(): Promise<Array<number>>;
+    retrievePattern(length: number): Promise<Array<number>>;
 }
 
 export interface PairingState {
     config: PairingConfig | null;
-    paired: boolean;
-    status: string;
+    state: string;
 }
 
 export interface PairingConfig {
@@ -17,7 +16,6 @@ export interface PairingConfig {
 }
 
 export interface PairingStatus {
-    supports: Array<string>;
     method: string;
     pattern: Array<number> | null;
 }

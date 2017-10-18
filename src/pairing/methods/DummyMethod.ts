@@ -5,7 +5,7 @@ export class DummyMethod implements IPairingMethod {
     dataLength: number;
     dummyPattern: Array<number>;
 
-    async retrievePairingData(): Promise<Array<number>> {
+    async retrievePattern(): Promise<Array<number>> {
         return this.dummyPattern;
     }
 
