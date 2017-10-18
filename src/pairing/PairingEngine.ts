@@ -11,8 +11,8 @@ export interface IPairingEngine {
 export class PairingEngine extends EventEmitter implements IPairingEngine {
     readonly pairingMethods: Array<IPairingMethod>;
 
-    private retrievePromise: Promise<PairingStatus>;
-    private retrievePromiseReject: any;
+    private patternPromise: Promise<PairingStatus>;
+    private patternPromiseReject: any;
 
     private outcomePromise: Promise<PairingState>;
     private outcomePromiseResolve: any;
@@ -31,8 +31,8 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             this.outcomePromiseReject('State transition cancelled outcome.');
         }
 
-        if (this.retrievePromise) {
-            this.retrievePromiseReject('State transition cancelled retrieve.');
+        if (this.patternPromise) {
+            this.patternPromiseReject('State transition cancelled pattern.');
         }
     }
 
@@ -42,8 +42,6 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     private waitingForPattern(state: PairingState) {
-        this.cleanupOutcome();
-
         if (!state.config) {
             throw new Error('attribute config does not exist.');
         }
@@ -63,15 +61,16 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                 // FIXME: handle this case
             } else {
                 this.selectedPairingMethod = foundMethod;
-                this.retrievePromise = new Promise<PairingStatus>(async (resolve, reject) => {
-                    this.retrievePromiseReject = reject;
 
-                    const pattern = await foundMethod.retrievePattern(state.config.length);
+                this.patternPromise = new Promise<PairingStatus>((resolve, reject) => {
+                    this.patternPromiseReject = reject;
 
-                    resolve(<PairingStatus>{
-                        pattern,
-                        method: foundMethod.methodName
-                    });
+                    foundMethod.retrievePattern(state.config.length).then(pattern => {
+                        resolve(<PairingStatus>{
+                            pattern,
+                            method: foundMethod.methodName
+                        });
+                    }).catch(error => reject(error));
                 });
 
                 this.outcomePromise = new Promise<PairingState>((resolve, reject) => {
@@ -111,8 +110,8 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             case 'timeout':
                 this.emit('pairingUpdate', state, null);
 
-                if (this.retrievePromise) {
-                    this.retrievePromiseReject('timed out');
+                if (this.patternPromise) {
+                    this.patternPromiseReject('timed out');
                 }
 
                 if (this.outcomePromise) {
@@ -135,12 +134,12 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     async patternInput(): Promise<void> {
-        if (!this.retrievePromise) {
+        if (!this.patternPromise) {
             throw new Error('No pairing method set.');
         }
 
-        const status = await this.retrievePromise;
-        this.retrievePromise = null;
+        const status = await this.patternPromise;
+        this.patternPromise = null;
         this.emit('pairingUpdate', null, status);
     }
 
