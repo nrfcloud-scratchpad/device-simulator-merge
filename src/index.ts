@@ -9,17 +9,9 @@ const device = new Thingy();
 const pairing = new Pairing();
 let cli;
 
-if (process.argv[2]) {
-    const argument = process.argv[2];
-    if (argument === 'cli') {
-        cli = new Cli(pairing);
-    } else {
-        run();
-    }
-}
-
 const run = () => {
-    device.extractDeviceId()
+    device.setPairingMethods(['colorpattern'])
+    .then(() => {device.extractDeviceId(); })
     .then(() => {pairing.setDevice(device); })
     .then(() => {pairing.setCloudConfiguration(); })
     .then(() => {pairing.connect(); })
@@ -31,5 +23,14 @@ const run = () => {
         console.log(reason);
     });
 };
+
+if (process.argv[2]) {
+    const argument = process.argv[2];
+    if (argument === 'cli') {
+        cli = new Cli(pairing);
+    } else {
+        run();
+    }
+}
 
 run();

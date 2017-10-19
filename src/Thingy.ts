@@ -1,4 +1,4 @@
-const Device = require('./Device');
+import { Device } from './Device';
 
 class Thingy extends Device {
     constructor() {
@@ -6,4 +6,4 @@ class Thingy extends Device {
     }
 }
 
-module.exports = Thingy;
+export = Thingy;
