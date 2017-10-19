@@ -5,8 +5,8 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "declaration": true,
-        "target": "es6",
-        "noImplicitAny": false,
+        "target": "es2015",
+        "noImplicitAny": true,
         "sourceMap": true,
         "emitDecoratorMetadata": false,
         "outDir": "dist/",
@@ -15,15 +15,9 @@
         "types": [
             "node"
         ],
-        "lib": [
-            "es2016"
-        ],
         "alwaysStrict": true
     },
     "include": [
         "src/**/*"
-    ],
-    "exclude": [
-        "node_modules"
     ]
 }

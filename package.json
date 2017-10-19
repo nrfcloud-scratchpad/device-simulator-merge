@@ -30,11 +30,10 @@
     "aws-iot-device-sdk": "^2.1.0",
     "aws-sdk": "^2.131.0",
     "jest": "^21.2.1",
-    "mqtt": "^2.13.0",
     "pem": "^1.12.0",
     "ts-jest": "^21.1.2",
     "tslint": "^5.7.0",
-    "typescript": "^2.5.3"
+    "typescript": "2.3.4"
   },
   "dependencies": {
     "dotenv": "^4.0.0"
