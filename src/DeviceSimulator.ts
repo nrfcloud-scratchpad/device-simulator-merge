@@ -1,11 +1,9 @@
-import { ConfigurationData, IConfigurationStorage } from './ConfigurationStorage';
+import { ConfigurationData } from './ConfigurationStorage';
 import { IPairingEngine } from './pairing/PairingEngine';
+import { IHostConnection } from './connection/HostConnection';
 import { ShadowModel, ShadowModelDesired } from './ShadowModel';
-import { IHostConnection } from './HostConnection';
-import { Pairing, PairingStatus } from './pairing/Pairing';
 
 let logger = require('winston');
-const awsIot = require('aws-iot-device-sdk');
 
 export interface MessageStatus {
     received: number;
@@ -31,9 +29,11 @@ export class DeviceSimulator implements IDeviceSimulator {
 
     constructor(config: ConfigurationData,
                 pairingEngine: IPairingEngine,
+                hostConnection: IHostConnection,
                 newLogger?: any) {
         this.config = config;
         this.pairingEngine = pairingEngine;
+        this.hostConnection = hostConnection;
         this.state = <DeviceSimulatorState>{
             connects: 0,
             connected: false,
@@ -50,12 +50,21 @@ export class DeviceSimulator implements IDeviceSimulator {
 
     async start(): Promise<void> {
         this.pairingEngine.on('pairingUpdate', (state, status) => {
-            this.hostConnection.publish(...);
+            this.hostConnection.updateShadow({
+                pairing: state,
+                pairingStatus: status
+            });
         });
 
-        this.hostConnection.on('shadowAccept', shadow => {
+        this.hostConnection.on('shadowGetAccepted', (shadow: ShadowModel) => {
             if (shadow.desired.pairing) {
                 this.pairingEngine.updatePairingState(shadow.desired.pairing);
+            }
+        });
+
+        this.hostConnection.on('shadowDelta', (delta: ShadowModelDesired) => {
+            if (delta.pairing) {
+                this.pairingEngine.updatePairingState(delta.pairing);
             }
         });
 

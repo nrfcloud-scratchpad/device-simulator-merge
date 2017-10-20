@@ -1,23 +1,13 @@
-import { ConfigurationData } from './ConfigurationStorage';
-import { ShadowModel, ShadowModelDesired } from './ShadowModel';
-
 import { EventEmitter } from 'events';
-import { DeviceSimulatorState } from './DeviceSimulator';
+import { IHostConnection } from './HostConnection';
+import { ConfigurationData } from '../ConfigurationStorage';
+import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../ShadowModel';
 
 const awsIot = require('aws-iot-device-sdk');
 let logger = require('winston');
 
-export interface IHostConnection extends EventEmitter {
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
-
-    on(event: 'shadowGetAccepted', handler: (shadow: ShadowModel) => void): this;
-    on(event: 'shadowDelta', handler: (shadow: ShadowModelDesired) => void): this;
-}
-
 export class AWSIoTHostConnection extends EventEmitter implements IHostConnection {
     private config: ConfigurationData;
-    private state: DeviceSimulatorState;
     private mqtt: any;
 
     constructor(config: ConfigurationData, newLogger?: any) {
@@ -32,6 +22,10 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
     private getShadowBaseTopic(): string {
         return `$aws/things/${this.config.clientId}/shadow`;
+    }
+
+    async updateShadow(reported: ShadowModelReported): Promise<void> {
+        this.mqtt.publish(`${this.getShadowBaseTopic()}/update`, JSON.stringify(reported));
     }
 
     connect(): Promise<void> {
@@ -65,8 +59,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
             });
 
             this.mqtt.on('connect', () => {
-                this.state.connected = true;
-                this.state.connects += 1;
+                this.emit('connect');
                 this.mqtt.publish(`${this.getShadowBaseTopic()}/get`);
 
                 if (resolveConnect) {
@@ -76,11 +69,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
             this.mqtt.on('disconnect', () => {
                 logger.info(`Disconnected from nRF Cloud.`);
-                this.state.connected = false;
-            });
-
-            this.mqtt.on('reconnect', () => {
-                logger.info('Reconnecting to nRF Cloud.');
+                this.emit('disconnect');
             });
 
             this.mqtt.on('reconnect', () => {
@@ -93,8 +82,6 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                 }
 
                 const shadowBaseTopic = this.getShadowBaseTopic();
-
-                this.state.messages.received++;
 
                 switch (topic) {
                     case `${shadowBaseTopic}/get/accepted`:
@@ -110,11 +97,20 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                         break;
                 }
             });
-
         });
     }
 
-    disconnect(): Promise<void> {
+    private async unsubscribeFromAll(): Promise<void> {
+        const shadowBaseTopic = this.getShadowBaseTopic();
 
+        this.mqtt.unsubscribe(`${shadowBaseTopic}/get/accepted`);
+        this.mqtt.unsubscribe(`${shadowBaseTopic}/update/delta`);
+        this.mqtt.unsubscribe(`${shadowBaseTopic}/get`);
+    }
+
+    async disconnect(): Promise<void> {
+        await this.unsubscribeFromAll();
+        this.mqtt.end(true);
+        return;
     }
 }

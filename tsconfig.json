@@ -12,6 +12,9 @@
         "outDir": "dist/",
         "noUnusedParameters": true,
         "noUnusedLocals": true,
+        "lib": [
+            "ES2015"
+        ],
         "types": [
             "node"
         ],

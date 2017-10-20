@@ -11,7 +11,8 @@
     "compile": "npm run compile:ts",
     "compile:ts": "tsc",
     "lint": "tslint --project ./tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "postinstall": "npm run build"
   },
   "repository": {
@@ -36,6 +37,8 @@
     "typescript": "2.3.4"
   },
   "dependencies": {
+    "colors": "^1.1.2",
+    "commander": "^2.11.0",
     "dotenv": "^4.0.0",
     "winston": "^2.4.0"
   },
@@ -43,12 +46,21 @@
     "transform": {
       ".(ts|tsx)": "./node_modules/ts-jest/preprocessor.js"
     },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts)$",
     "moduleFileExtensions": [
       "ts",
       "tsx",
       "js",
       "json"
-    ]
+    ],
+    "mapCoverage": true
+  },
+  "engines": {
+    "node": ">=6.10.2"
   }
 }

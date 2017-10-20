@@ -225,7 +225,7 @@ describe('device user association', () => {
         });
 
         pairingEngine.updatePairingState(<Pairing>{
-           state: 'paired'
+            state: 'paired'
         });
 
         outcome = await pairingEngine.pairingOutcome();

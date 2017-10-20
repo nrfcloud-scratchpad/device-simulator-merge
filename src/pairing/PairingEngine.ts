@@ -8,6 +8,8 @@ export interface IPairingEngine {
     pairingOutcome(): Promise<Pairing>;
 }
 
+let logger = require('winston');
+
 export class PairingEngine extends EventEmitter implements IPairingEngine {
     readonly pairingMethods: Array<IPairingMethod>;
 
@@ -21,9 +23,13 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
 
     private selectedPairingMethod: IPairingMethod;
 
-    constructor(pairingMethods: Array<IPairingMethod>) {
+    constructor(pairingMethods: Array<IPairingMethod>, newLogger?: any) {
         super();
         this.pairingMethods = pairingMethods;
+
+        if (newLogger) {
+            logger = newLogger;
+        }
     }
 
     private cleanupOutcome() {
@@ -89,7 +95,8 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     updatePairingState(state: Pairing) {
-        console.log(`STATE: ${this.previousState} -> ${state.state}`);
+        logger.debug(`STATE: ${this.previousState} -> ${state.state}`);
+
         this.previousState = state.state;
 
         switch (state.state) {
