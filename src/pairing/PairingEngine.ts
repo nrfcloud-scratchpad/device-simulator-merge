@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
-import { IPairingMethod, PairingState, PairingStatus } from './Pairing';
+import { IPairingMethod, Pairing, PairingStatus } from './Pairing';
 
 export interface IPairingEngine {
-    updatePairingState(state: PairingState): void;
-    on(event: 'pairingUpdate', listener: (state: PairingState, status: PairingStatus) => void): this;
+    updatePairingState(state: Pairing): void;
+    on(event: 'pairingUpdate', listener: (state: Pairing, status: PairingStatus) => void): this;
     patternInput(): Promise<void>;
-    pairingOutcome(): Promise<PairingState>;
+    pairingOutcome(): Promise<Pairing>;
 }
 
 export class PairingEngine extends EventEmitter implements IPairingEngine {
@@ -14,7 +14,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     private patternPromise: Promise<PairingStatus>;
     private patternPromiseReject: any;
 
-    private outcomePromise: Promise<PairingState>;
+    private outcomePromise: Promise<Pairing>;
     private outcomePromiseResolve: any;
     private outcomePromiseReject: any;
     private previousState: string;
@@ -36,12 +36,12 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
         }
     }
 
-    private initiatePairing(state: PairingState) {
+    private initiatePairing(state: Pairing) {
         this.cleanupOutcome();
         this.emit('pairingUpdate', state, null);
     }
 
-    private waitingForPattern(state: PairingState) {
+    private waitingForPattern(state: Pairing) {
         if (!state.config) {
             throw new Error('attribute config does not exist.');
         }
@@ -73,7 +73,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                     }).catch(error => reject(error));
                 });
 
-                this.outcomePromise = new Promise<PairingState>((resolve, reject) => {
+                this.outcomePromise = new Promise<Pairing>((resolve, reject) => {
                     this.outcomePromiseResolve = resolve;
                     this.outcomePromiseReject = reject;
                 });
@@ -83,12 +83,12 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
         }
     }
 
-    private unknownState(state: PairingState) {
+    private unknownState(state: Pairing) {
         this.cleanupOutcome();
         throw new Error(`Shadow ask to set device in unknown state '${state.state}'`);
     }
 
-    updatePairingState(state: PairingState) {
+    updatePairingState(state: Pairing) {
         console.log(`STATE: ${this.previousState} -> ${state.state}`);
         this.previousState = state.state;
 
@@ -96,7 +96,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             case 'initiate':
                 this.initiatePairing(state);
                 break;
-            case 'waiting_for_pattern':
+            case 'pattern_wait':
                 this.waitingForPattern(state);
                 break;
             case 'paired':
@@ -143,7 +143,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
         this.emit('pairingUpdate', null, status);
     }
 
-    async pairingOutcome(): Promise<PairingState> {
+    async pairingOutcome(): Promise<Pairing> {
         if (!this.outcomePromise) {
             throw new Error('Not possible to get outcome.');
         }

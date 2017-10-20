@@ -5,9 +5,10 @@ export interface IPairingMethod {
     retrievePattern(length: number): Promise<Array<number>>;
 }
 
-export interface PairingState {
+export interface Pairing {
     config: PairingConfig | null;
     state: string;
+    iteration: number;
 }
 
 export interface PairingConfig {

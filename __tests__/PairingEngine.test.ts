@@ -1,6 +1,6 @@
 import { IPairingEngine, PairingEngine } from '../src/pairing/PairingEngine';
 import { DummyMethod } from '../src/pairing/methods/DummyMethod';
-import { PairingState, IPairingMethod, PairingStatus, PairingConfig } from '../src/pairing/Pairing';
+import { Pairing, IPairingMethod, PairingStatus, PairingConfig } from '../src/pairing/Pairing';
 
 let pairingUpdateMock: any;
 let pairingEngine: IPairingEngine;
@@ -18,13 +18,13 @@ describe('device user association', () => {
 
     it('shall support state paired', async () => {
         // STATE: initiate
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'initiate'
         });
 
-        // STATE: waiting_for_pattern
-        pairingEngine.updatePairingState(<PairingState>{
-            state: 'waiting_for_pattern',
+        // STATE: pattern_wait
+        pairingEngine.updatePairingState(<Pairing>{
+            state: 'pattern_wait',
             config: <PairingConfig>{
                 length: 6,
                 method: 'dummy'
@@ -34,28 +34,28 @@ describe('device user association', () => {
         await pairingEngine.patternInput();
 
         // STATE: paired
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'paired'
         });
 
         const pairingState = await pairingEngine.pairingOutcome();
-        expect(pairingState).toEqual(<PairingState>{
+        expect(pairingState).toEqual(<Pairing>{
             state: 'paired'
         });
 
         expect(pairingUpdateMock.mock.calls.length).toBe(4);
 
-        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate'
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
-        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<Pairing>{
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
             },
-            state: 'waiting_for_pattern'
+            state: 'pattern_wait'
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -67,7 +67,7 @@ describe('device user association', () => {
         });
 
         // Fourth callback
-        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
             state: 'paired'
         });
         expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
@@ -75,13 +75,13 @@ describe('device user association', () => {
 
     it('shall support state timeout', async () => {
         // STATE: initiate
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'initiate'
         });
 
-        // STATE: waiting_for_pattern
-        pairingEngine.updatePairingState(<PairingState>{
-            state: 'waiting_for_pattern',
+        // STATE: pattern_wait
+        pairingEngine.updatePairingState(<Pairing>{
+            state: 'pattern_wait',
             config: <PairingConfig>{
                 length: 6,
                 method: 'dummy'
@@ -89,33 +89,33 @@ describe('device user association', () => {
         });
 
         // STATE: timeout
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'timeout'
         });
 
         const pairingState = await pairingEngine.pairingOutcome();
-        expect(pairingState).toEqual(<PairingState>{
+        expect(pairingState).toEqual(<Pairing>{
             state: 'timeout'
         });
 
         expect(pairingUpdateMock.mock.calls.length).toBe(3);
 
-        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate'
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
-        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<Pairing>{
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
             },
-            state: 'waiting_for_pattern'
+            state: 'pattern_wait'
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
         // Third callback
-        expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
             state: 'timeout'
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
@@ -123,13 +123,13 @@ describe('device user association', () => {
 
     it('shall support state pattern_mismatch', async () => {
         // STATE: initiate
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'initiate'
         });
 
-        // STATE: waiting_for_pattern
-        pairingEngine.updatePairingState(<PairingState>{
-            state: 'waiting_for_pattern',
+        // STATE: pattern_wait
+        pairingEngine.updatePairingState(<Pairing>{
+            state: 'pattern_wait',
             config: <PairingConfig>{
                 length: 6,
                 method: 'dummy'
@@ -139,28 +139,28 @@ describe('device user association', () => {
         await pairingEngine.patternInput();
 
         // STATE: pattern_mismatch
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'pattern_mismatch'
         });
 
         const pairingState = await pairingEngine.pairingOutcome();
-        expect(pairingState).toEqual(<PairingState>{
+        expect(pairingState).toEqual(<Pairing>{
             state: 'pattern_mismatch'
         });
 
         expect(pairingUpdateMock.mock.calls.length).toBe(4);
 
-        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate'
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
-        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<Pairing>{
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
             },
-            state: 'waiting_for_pattern'
+            state: 'pattern_wait'
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -172,21 +172,21 @@ describe('device user association', () => {
         });
 
         // Fourth callback
-        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
             state: 'pattern_mismatch'
         });
         expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
     });
 
-    it('shall support state transition waiting_for_pattern -> timeout -> waiting_for_pattern -> paired', async () => {
+    it('shall support state transition pattern_wait -> timeout -> pattern_wait -> paired', async () => {
         // STATE: initiate
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'initiate'
         });
 
-        // STATE: waiting_for_pattern
-        pairingEngine.updatePairingState(<PairingState>{
-            state: 'waiting_for_pattern',
+        // STATE: pattern_wait
+        pairingEngine.updatePairingState(<Pairing>{
+            state: 'pattern_wait',
             config: <PairingConfig>{
                 length: 6,
                 method: 'dummy'
@@ -201,17 +201,17 @@ describe('device user association', () => {
             patternInputMock('fail', error);
         });
 
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
             state: 'timeout'
         });
 
         let outcome = await pairingEngine.pairingOutcome();
-        expect(outcome).toEqual(<PairingState>{
+        expect(outcome).toEqual(<Pairing>{
             state: 'timeout'
         });
 
-        pairingEngine.updatePairingState(<PairingState>{
-            state: 'waiting_for_pattern',
+        pairingEngine.updatePairingState(<Pairing>{
+            state: 'pattern_wait',
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
@@ -224,12 +224,12 @@ describe('device user association', () => {
             patternInputMock('fail', error);
         });
 
-        pairingEngine.updatePairingState(<PairingState>{
+        pairingEngine.updatePairingState(<Pairing>{
            state: 'paired'
         });
 
         outcome = await pairingEngine.pairingOutcome();
-        expect(outcome).toEqual(<PairingState>{
+        expect(outcome).toEqual(<Pairing>{
             state: 'paired'
         });
 
@@ -239,38 +239,38 @@ describe('device user association', () => {
         expect(patternInputMock.mock.calls[0][0]).toBe('fail');
         expect(patternInputMock.mock.calls[1][0]).toBe('ok');
 
-        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate'
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
-        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<Pairing>{
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
             },
-            state: 'waiting_for_pattern'
+            state: 'pattern_wait'
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
         // Third callback
-        expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
             state: 'timeout'
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
 
         // Fourth callback
-        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
             config: <PairingConfig>{
                 method: 'dummy',
                 length: 6
             },
-            state: 'waiting_for_pattern'
+            state: 'pattern_wait'
         });
         expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
 
         // Fifth callback
-        expect(pairingUpdateMock.mock.calls[4][0]).toEqual(<PairingState>{
+        expect(pairingUpdateMock.mock.calls[4][0]).toEqual(<Pairing>{
             state: 'paired'
         });
         expect(pairingUpdateMock.mock.calls[4][1]).toBeNull();

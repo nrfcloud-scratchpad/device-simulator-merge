@@ -137,8 +137,8 @@ class Pairing {
                                         this.STATE = 'INITIATE';
                                         break;
 
-                                    case 'waiting_for_pattern':
-                                        this.STATE = 'WAITING_FOR_PATTERN';
+                                    case 'pattern_wait':
+                                        this.STATE = 'PATTERN_WAIT';
                                         break;
 
                                     case 'timeout':
