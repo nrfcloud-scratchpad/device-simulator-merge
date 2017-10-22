@@ -15,6 +15,7 @@ export interface ConfigurationData {
 
 export interface IConfigurationStorage {
     getConfiguration(): Promise<ConfigurationData>;
+
     setConfiguration(configuration: ConfigurationData): Promise<void>;
 }
 
@@ -45,5 +46,21 @@ export class FileConfigurationStorage implements IConfigurationStorage {
     async setConfiguration(configuration: ConfigurationData): Promise<void> {
         await this.ensureConfigFileExists();
         await new Promise(resolve => fs.writeFile(this.configFilename, JSON.stringify(configuration), 'utf8', resolve));
+    }
+}
+
+export class MemoryConfigurationStorage implements IConfigurationStorage {
+    private configuration: ConfigurationData;
+
+    constructor(configuration: ConfigurationData) {
+        this.configuration = configuration;
+    }
+
+    async getConfiguration(): Promise<ConfigurationData> {
+        return this.configuration;
+    }
+
+    async setConfiguration(configuration: ConfigurationData): Promise<void> {
+        this.configuration = configuration;
     }
 }

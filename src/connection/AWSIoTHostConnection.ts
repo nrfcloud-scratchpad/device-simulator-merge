@@ -1,14 +1,16 @@
 import { EventEmitter } from 'events';
-import { IHostConnection } from './HostConnection';
+import { HostConnectionError, IHostConnection } from './HostConnection';
 import { ConfigurationData } from '../ConfigurationStorage';
-import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../ShadowModel';
+import { ShadowModel, ShadowModelDesired, ShadowModelReported, Topics } from '../ShadowModel';
 
-const awsIot = require('aws-iot-device-sdk');
+import * as awsIot from 'aws-iot-device-sdk';
+
 let logger = require('winston');
 
 export class AWSIoTHostConnection extends EventEmitter implements IHostConnection {
     private config: ConfigurationData;
-    private mqtt: any;
+    private topics: Topics;
+    private mqtt: awsIot.device;
 
     constructor(config: ConfigurationData, newLogger?: any) {
         super();
@@ -33,7 +35,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
         return new Promise<void>((resolveConnect, rejectConnect) => {
             try {
-                this.mqtt = awsIot.device({
+                this.mqtt = new awsIot.device({
                     ...this.config
                 });
 
@@ -60,14 +62,14 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
             this.mqtt.on('connect', () => {
                 this.emit('connect');
-                this.mqtt.publish(`${this.getShadowBaseTopic()}/get`);
+                this.mqtt.publish(`${this.getShadowBaseTopic()}/get`, '');
 
                 if (resolveConnect) {
                     resolveConnect();
                 }
             });
 
-            this.mqtt.on('disconnect', () => {
+            this.mqtt.on('close', () => {
                 logger.info(`Disconnected from nRF Cloud.`);
                 this.emit('disconnect');
             });
@@ -93,7 +95,11 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                         this.emit('shadowDelta', state);
                         break;
                     default:
-                        logger.error(`Received message on unknown topic '${topic}', message '${JSON.parse(payload)}'`);
+                        if (this.topics && this.topics.c2d && this.topics.c2d === topic) {
+                            this.emit('message', payload);
+                        } else {
+                            logger.error(`Received message on unknown topic '${topic}', message '${JSON.parse(payload)}'`);
+                        }
                         break;
                 }
             });
@@ -106,11 +112,35 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         this.mqtt.unsubscribe(`${shadowBaseTopic}/get/accepted`);
         this.mqtt.unsubscribe(`${shadowBaseTopic}/update/delta`);
         this.mqtt.unsubscribe(`${shadowBaseTopic}/get`);
+
+        if (this.topics && this.topics.c2d) {
+            this.mqtt.unsubscribe(this.topics.c2d);
+        }
     }
 
     async disconnect(): Promise<void> {
         await this.unsubscribeFromAll();
         this.mqtt.end(true);
         return;
+    }
+
+    async sendMessage(message: any): Promise<void> {
+        if (!this.topics || !this.topics.d2c) {
+            throw new Error(`Application topic to send message to not provided.`);
+        }
+
+        if (!this.mqtt) {
+            throw new HostConnectionError('No MQTT client provided.');
+        }
+
+        return new Promise<void>((resolve, reject) => {
+            this.mqtt.publish(this.topics.d2c, message, null, error => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
     }
 }

@@ -1,5 +1,5 @@
-import { IHostConnection } from '../src/connection/HostConnection';
-import { FakeHostConnection } from '../src/connection/FakeHostConnection';
+import { IHostConnection } from '../../src/connection/HostConnection';
+import { FakeHostConnection } from '../../src/connection/FakeHostConnection';
 
 let hostConnection: IHostConnection;
 

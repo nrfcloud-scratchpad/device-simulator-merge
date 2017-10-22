@@ -1,13 +1,13 @@
-import { IPairingEngine, PairingEngine } from '../src/pairing/PairingEngine';
-import { DummyMethod } from '../src/pairing/methods/DummyMethod';
-import { Pairing, IPairingMethod, PairingStatus, PairingConfig } from '../src/pairing/Pairing';
+import { IPairingEngine, PairingEngine } from '../../src/pairing/PairingEngine';
+import { DummyMethod } from '../../src/pairing/methods/DummyMethod';
+import { Pairing, IPairingMethod, PairingStatus, PairingConfig } from '../../src/pairing/Pairing';
 
 let pairingUpdateMock: any;
 let pairingEngine: IPairingEngine;
 
 describe('device user association', () => {
     beforeEach(() => {
-        const pairingMethods = new Array<IPairingMethod>();
+        const pairingMethods = [];
         pairingMethods.push(new DummyMethod([1, 2, 3, 4, 5, 6]));
 
         pairingEngine = new PairingEngine(pairingMethods);

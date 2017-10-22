@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/NordicSemiconductor/nrfcloud-device-simulator#readme",
   "devDependencies": {
+    "@types/aws-iot-device-sdk": "^2.1.0",
     "@types/jest": "^21.1.2",
     "@types/node": "^8.0.34",
     "aws-iot-device-sdk": "^2.1.0",

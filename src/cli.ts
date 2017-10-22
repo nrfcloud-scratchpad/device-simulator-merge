@@ -7,14 +7,17 @@ const {red} = require('colors');
 
 import { FileConfigurationStorage } from './ConfigurationStorage';
 import { PairingEngine } from './pairing/PairingEngine';
-import { AWSIoTHostConnection } from './connection/AWSIoTHostConnection';
 import { DummyMethod } from './pairing/methods/DummyMethod';
-import { DeviceSimulator } from './DeviceSimulator';
+import { FirmwareDirectory } from './firmware/FirmwareDirectory';
+import { ISensor } from './sensors/Sensor';
+import { FakeGps } from './sensors/FakeGps';
+import { DummySensor } from './sensors/DummySensor';
+import { AWSIoTHostConnection } from './connection/AWSIoTHostConnection';
 
 let logger = require('winston');
 let ran = false;
 
-async function startSimulator(configFilename: string): Promise<void> {
+async function startSimulation(configFilename: string, firmwareNsrn: string): Promise<number> {
     if (configFilename == null) {
         configFilename = path.join(os.homedir(), '.nrfcloud', 'simulator_config.json');
     }
@@ -33,22 +36,32 @@ async function startSimulator(configFilename: string): Promise<void> {
 
     const hostConnection = new AWSIoTHostConnection(config, logger);
 
-    const deviceSimulator = new DeviceSimulator(
+    const sensors: Map<string, ISensor> = new Map<string, ISensor>();
+    sensors.set('gps', new FakeGps('/tmp/output.txt', ['GPGGA']));
+    sensors.set('acc', new DummySensor(new Uint8Array([1, 2, 3, 4, 5]), 1000));
+
+    const firmwareDirectory = new FirmwareDirectory(
         config,
         pairingEngine,
         hostConnection,
-        logger);
+        sensors,
+        logger
+    );
 
-    await deviceSimulator.start();
+    firmwareDirectory.create();
+
+    const firmware = firmwareDirectory.getFirmware(firmwareNsrn);
+    return firmware.main();
 }
 
 program
-    .command('start [config]')
-    .action((config: string) => {
+    .command('start <firmware> [config]')
+    .action((firmware: string, config: string) => {
         ran = true;
 
-        Promise.all([startSimulator(config), new Promise(() => {})]
-        ).catch(error => {
+        startSimulation(config, firmware).then(retval => {
+            console.log(`Simulator stopped with return value ${retval}.`);
+        }).catch(error => {
             process.stderr.write(`${red(error)}\n`);
         });
     });
