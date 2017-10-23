@@ -1,5 +1,5 @@
 import { IHostConnection } from '../../src/connection/HostConnection';
-import { FakeHostConnection } from '../../src/connection/FakeHostConnection';
+import { FakeHostConnection, OnSendMessage, OnUpdateShadow } from '../../src/connection/FakeHostConnection';
 import { DummyMethod } from '../../src/pairing/methods/DummyMethod';
 import { PairingEngine } from '../../src/pairing/PairingEngine';
 import { ISensor } from '../../src/sensors/Sensor';
@@ -20,13 +20,14 @@ describe('firmware directory', () => {
         const pairingMethods = [new DummyMethod([1, 2, 3, 4, 5, 6])];
         const pairingEngine = new PairingEngine(pairingMethods);
 
-        const onUpdateShadow = async (updateShadow: ShadowModelReported) => {
+        const onUpdateShadow: OnUpdateShadow = async (updateShadow: ShadowModelReported) => {
             console.log('! onUpdateShadow');
             return;
         };
 
-        const onSendMessage = async (message: any) => {
-            console.log(`! onSendMessage ${JSON.stringify(message)}`);
+        const onSendMessage: OnSendMessage = async (message: any) => {
+            const msg = String.fromCharCode.apply(null, message);
+            console.log(`! onSendMessage ${JSON.stringify(msg)}`);
             return;
         };
 

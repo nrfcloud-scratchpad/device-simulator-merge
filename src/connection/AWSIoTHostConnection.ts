@@ -36,7 +36,12 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         return new Promise<void>((resolveConnect, rejectConnect) => {
             try {
                 this.mqtt = new awsIot.device({
-                    ...this.config
+                    ca: this.config.caCert,
+                    clientCert: this.config.clientCert,
+                    privateKey: this.config.privateKey,
+                    clientId: this.config.clientId,
+                    host: this.config.brokerHostname,
+                    region: this.config.region
                 });
 
                 this.mqtt.subscribe(`${this.getShadowBaseTopic()}/get/accepted`);

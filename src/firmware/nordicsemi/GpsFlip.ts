@@ -84,7 +84,7 @@ export class GpsFlip implements IFirmware {
             logger.debug(`Received message ${message}`);
         });
 
-        this.sensors.get('gps').on('data', data => {
+        this.sensors.get('gps').on('data', (_, data) => {
             // TODO: put data into firmware specific protocol
             this.hostConnection.sendMessage(data).catch(error => {
                 logger.error(`Error sending GPS sensor data to nRF Cloud. Error is ${error.message}`);
