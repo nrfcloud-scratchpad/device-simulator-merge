@@ -6,7 +6,7 @@ import { Pairing } from '../pairing/Pairing';
 let logger = require('winston');
 
 export type OnUpdateShadow = (updateShadow: ShadowModelReported) => Promise<void>;
-export type OnSendMessage = (message: any) => Promise<void>;
+export type OnSendMessage = (message: string) => Promise<void>;
 
 export class FakeHostConnection extends EventEmitter implements IHostConnection {
     private reported: ShadowModelReported;
@@ -51,9 +51,7 @@ export class FakeHostConnection extends EventEmitter implements IHostConnection 
         this.reported = reported;
     }
 
-    async sendMessage(message: any): Promise<void> {
-        logger.debug(`Fake: Sending message to host '${JSON.stringify(message)}'`);
-
+    async sendMessage(message: string): Promise<void> {
         if (this.onSendMessage) {
             await this.onSendMessage(message);
         }

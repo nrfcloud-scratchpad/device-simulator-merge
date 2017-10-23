@@ -4,6 +4,7 @@ import { IPairingEngine } from '../../pairing/PairingEngine';
 import { IHostConnection } from '../../connection/HostConnection';
 import { ShadowModel, ShadowModelDesired } from '../../ShadowModel';
 import { ISensor } from '../../sensors/Sensor';
+import { DemopackMessage } from './GpsFlipModel';
 
 let logger = require('winston');
 
@@ -35,6 +36,24 @@ export class GpsFlip implements IFirmware {
         if (newLogger) {
             logger = newLogger;
         }
+    }
+
+    private sendGpsData(timestamp: number, data: string): void {
+        const timeStamp = new Date(timestamp).toISOString();
+
+        const message = <DemopackMessage>{
+            appId: 'GPS',
+            messageId: this.state.messages.sent,
+            messageType: 'DATA',
+            timeStamp,
+            data
+        };
+
+        this.state.messages.sent++;
+
+        this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
+            logger.error(`Error sending GPS sensor data to nRF Cloud. Error is ${error.message}`);
+        });
     }
 
     async main(): Promise<number> {
@@ -75,8 +94,8 @@ export class GpsFlip implements IFirmware {
         });
 
         this.hostConnection.on('disconnect', () => {
-           this.sensors.get('gps').stop();
-           this.sensors.get('acc').stop();
+            this.sensors.get('gps').stop();
+            this.sensors.get('acc').stop();
         });
 
         this.hostConnection.on('message', (message: any) => {
@@ -84,11 +103,8 @@ export class GpsFlip implements IFirmware {
             logger.debug(`Received message ${message}`);
         });
 
-        this.sensors.get('gps').on('data', (_, data) => {
-            // TODO: put data into firmware specific protocol
-            this.hostConnection.sendMessage(data).catch(error => {
-                logger.error(`Error sending GPS sensor data to nRF Cloud. Error is ${error.message}`);
-            });
+        this.sensors.get('gps').on('data', (timestamp: number, data) => {
+            this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
         });
 
         await this.hostConnection.connect();

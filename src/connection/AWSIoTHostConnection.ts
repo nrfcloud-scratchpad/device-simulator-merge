@@ -129,7 +129,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         return;
     }
 
-    async sendMessage(message: any): Promise<void> {
+    async sendMessage(message: string): Promise<void> {
         if (!this.topics || !this.topics.d2c) {
             throw new Error(`Application topic to send message to not provided.`);
         }

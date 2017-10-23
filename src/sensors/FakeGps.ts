@@ -80,7 +80,7 @@ export class FakeGps extends EventEmitter implements ISensor {
             const sentences = this.nmeaSeconds[next];
 
             sentences.forEach((sentence: string) => {
-                this.emit('data', next, new Uint8Array(Buffer.from(sentence)));
+                this.emit('data', parseInt(next), new Uint8Array(Buffer.from(sentence)));
             });
 
             delete this.nmeaSeconds[next];

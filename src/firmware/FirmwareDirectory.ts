@@ -46,7 +46,14 @@ export class FirmwareDirectory {
             throw new FirmwareError(`No firmware registered with directory.`);
         }
 
-        return Object.keys(this.firmware);
+        const keys = this.firmware.keys();
+        const retval = [];
+
+        for (let key of keys) {
+            retval.push(key);
+        }
+
+        return retval;
     }
 
     getFirmware(firmware: string): IFirmware {

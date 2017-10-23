@@ -25,9 +25,8 @@ describe('firmware directory', () => {
             return;
         };
 
-        const onSendMessage: OnSendMessage = async (message: any) => {
-            const msg = String.fromCharCode.apply(null, message);
-            console.log(`! onSendMessage ${JSON.stringify(msg)}`);
+        const onSendMessage: OnSendMessage = async (message: string) => {
+            console.log(`! onSendMessage ${message}`);
             return;
         };
 
@@ -52,7 +51,14 @@ describe('firmware directory', () => {
     });
 
     it('shall contain gps flip firmware and simulate it', async () => {
+        const firmwareList = firmwareDirectory.getFirmwareList();
+
+        expect(firmwareList).toBeDefined();
+        expect(firmwareList.length).toBe(1);
+        expect(firmwareList[0]).toBe('nordicsemi-todo-todo-todo-todo-gpsflip-todo');
+
         const firmware = firmwareDirectory.getFirmware('nordicsemi-todo-todo-todo-todo-gpsflip-todo');
+        expect(firmware).toBeDefined();
         await firmware.main();
     });
 });

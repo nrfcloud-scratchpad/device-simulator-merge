@@ -18,5 +18,5 @@ export interface IHostConnection extends EventEmitter {
     on(event: 'connect', handler: () => void): this;
     on(event: 'shadowGetAccepted', handler: (shadow: ShadowModel) => void): this;
     on(event: 'shadowDelta', handler: (shadow: ShadowModelDesired) => void): this;
-    on(event: 'message', handler: (message: any) => void): this;
+    on(event: 'message', handler: (message: string) => void): this;
 }
