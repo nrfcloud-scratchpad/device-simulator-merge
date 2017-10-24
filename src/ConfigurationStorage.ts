@@ -15,7 +15,6 @@ export interface ConfigurationData {
 
 export interface IConfigurationStorage {
     getConfiguration(): Promise<ConfigurationData>;
-
     setConfiguration(configuration: ConfigurationData): Promise<void>;
 }
 
@@ -36,8 +35,19 @@ export class FileConfigurationStorage implements IConfigurationStorage {
     }
 
     async getConfiguration(): Promise<ConfigurationData> {
-        await this.ensureConfigFileExists();
-        const configFileContent = (await new Promise(resolve => fs.readFile(this.configFilename, resolve))) as string;
+        const exists = await new Promise((resolve) => fs.exists(this.configFilename, resolve));
+
+        if (!exists) {
+            throw new Error(`Configuration file '${this.configFilename}' does not exist.`);
+        }
+
+        const configFileContent = (await new Promise((resolve, reject) => fs.readFile(this.configFilename, 'utf8', (error, data) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(data);
+            }
+        }))) as string;
         const configFromFile = JSON.parse(configFileContent);
 
         return <ConfigurationData>Object.assign({}, configFromFile);

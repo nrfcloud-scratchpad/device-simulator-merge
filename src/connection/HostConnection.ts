@@ -14,6 +14,8 @@ export interface IHostConnection extends EventEmitter {
     updateShadow(reported: ShadowModelReported): Promise<void>;
     sendMessage(message: any): Promise<void>;
 
+    setTopics(c2d: string, d2c: string): Promise<void>;
+
     on(event: 'disconnect', handler: () => void): this;
     on(event: 'connect', handler: () => void): this;
     on(event: 'shadowGetAccepted', handler: (shadow: ShadowModel) => void): this;

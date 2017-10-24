@@ -1,6 +1,6 @@
 import { IPairingEngine, PairingEngine } from '../../src/pairing/PairingEngine';
 import { DummyMethod } from '../../src/pairing/methods/DummyMethod';
-import { Pairing, IPairingMethod, PairingStatus, PairingConfig } from '../../src/pairing/Pairing';
+import { Pairing, PairingStatus, PairingConfig } from '../../src/pairing/Pairing';
 
 let pairingUpdateMock: any;
 let pairingEngine: IPairingEngine;
@@ -57,6 +57,7 @@ describe('device user association', () => {
             },
             state: 'pattern_wait'
         });
+
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
         // Third callback
@@ -143,7 +144,8 @@ describe('device user association', () => {
             state: 'pattern_mismatch'
         });
 
-        const pairingState = await pairingEngine.pairingOutcome();
+        const pairingState = await
+            pairingEngine.pairingOutcome();
         expect(pairingState).toEqual(<Pairing>{
             state: 'pattern_mismatch'
         });
@@ -181,7 +183,7 @@ describe('device user association', () => {
     it('shall support state transition pattern_wait -> timeout -> pattern_wait -> paired', async () => {
         // STATE: initiate
         pairingEngine.updatePairingState(<Pairing>{
-            state: 'initiate'
+                state: 'initiate'
         });
 
         // STATE: pattern_wait
@@ -274,6 +276,5 @@ describe('device user association', () => {
             state: 'paired'
         });
         expect(pairingUpdateMock.mock.calls[4][1]).toBeNull();
-
     });
 });

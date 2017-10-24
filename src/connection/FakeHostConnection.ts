@@ -6,12 +6,14 @@ import { Pairing } from '../pairing/Pairing';
 let logger = require('winston');
 
 export type OnUpdateShadow = (updateShadow: ShadowModelReported) => Promise<void>;
-export type OnSendMessage = (message: string) => Promise<void>;
+export type OnSendMessage = (topic: string, message: string) => Promise<void>;
 
 export class FakeHostConnection extends EventEmitter implements IHostConnection {
     private reported: ShadowModelReported;
     private onUpdateShadow: OnUpdateShadow;
     private onSendMessage: OnSendMessage;
+    private d2c: string;
+    private c2d: string;
 
     constructor(onUpdateShadow?: OnUpdateShadow,
                 onSendMessage?: OnSendMessage, newLogger?: any) {
@@ -53,9 +55,14 @@ export class FakeHostConnection extends EventEmitter implements IHostConnection 
 
     async sendMessage(message: string): Promise<void> {
         if (this.onSendMessage) {
-            await this.onSendMessage(message);
+            await this.onSendMessage(this.d2c, message);
         }
 
         return;
+    }
+
+    async setTopics(c2d: string, d2c: string): Promise<void> {
+        this.c2d = c2d;
+        this.d2c = d2c;
     }
 }

@@ -9,6 +9,7 @@ export interface Pairing {
     config: PairingConfig | null;
     state: string;
     iteration: number;
+    topics: Topics;
 }
 
 export interface PairingConfig {
@@ -19,4 +20,9 @@ export interface PairingConfig {
 export interface PairingStatus {
     method: string;
     pattern: Array<number> | null;
+}
+
+export interface Topics {
+    c2d: string;
+    d2c: string;
 }

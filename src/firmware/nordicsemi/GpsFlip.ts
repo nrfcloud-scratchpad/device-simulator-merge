@@ -5,6 +5,7 @@ import { IHostConnection } from '../../connection/HostConnection';
 import { ShadowModel, ShadowModelDesired } from '../../ShadowModel';
 import { ISensor } from '../../sensors/Sensor';
 import { DemopackMessage } from './GpsFlipModel';
+import { Pairing } from '../../pairing/Pairing';
 
 let logger = require('winston');
 
@@ -56,6 +57,14 @@ export class GpsFlip implements IFirmware {
         });
     }
 
+    private async startApplication(pairing: Pairing): Promise<void> {
+        if (pairing.state === 'paired' && pairing.topics && pairing.topics.d2c) {
+            await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
+            await this.sensors.get('gps').start();
+            await this.sensors.get('acc').start();
+        }
+    }
+
     async main(): Promise<number> {
         if (!this.sensors) {
             throw new FirmwareError('Sensors not provided. Required by GpsFlip.');
@@ -76,21 +85,25 @@ export class GpsFlip implements IFirmware {
             });
         });
 
-        this.hostConnection.on('shadowGetAccepted', (shadow: ShadowModel) => {
-            if (shadow.desired.pairing) {
-                this.pairingEngine.updatePairingState(shadow.desired.pairing);
+        this.hostConnection.on('shadowGetAccepted', async (shadow: ShadowModel) => {
+            this.pairingEngine.updatePairingState(shadow.desired.pairing);
+
+            if (shadow.desired.pairing && shadow.desired.pairing.state === 'paired') {
+                await this.startApplication(shadow.desired.pairing);
             }
         });
 
-        this.hostConnection.on('shadowDelta', (delta: ShadowModelDesired) => {
+        this.hostConnection.on('shadowDelta', async (delta: ShadowModelDesired) => {
             if (delta.pairing) {
                 this.pairingEngine.updatePairingState(delta.pairing);
+            }
+
+            if (delta.pairing.state === 'paired') {
+                await this.startApplication(delta.pairing);
             }
         });
 
         this.hostConnection.on('connect', () => {
-            this.sensors.get('gps').start();
-            this.sensors.get('acc').start();
         });
 
         this.hostConnection.on('disconnect', () => {

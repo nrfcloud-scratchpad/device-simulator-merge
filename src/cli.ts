@@ -22,7 +22,7 @@ async function startSimulation(configFilename: string, firmwareNsrn: string): Pr
         configFilename = path.join(os.homedir(), '.nrfcloud', 'simulator_config.json');
     }
 
-    const exists = await new Promise((resolve) => fs.exists(configFilename, resolve));
+    const exists = await new Promise<boolean>((resolve) => fs.exists(configFilename, resolve));
 
     if (!exists) {
         throw `Configuration file '${configFilename}' not found.`;

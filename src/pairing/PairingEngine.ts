@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events';
-import { IPairingMethod, Pairing, PairingStatus } from './Pairing';
+import { IPairingMethod, Pairing, PairingStatus, Topics } from './Pairing';
 
 export interface IPairingEngine {
     updatePairingState(state: Pairing): void;
     on(event: 'pairingUpdate', listener: (state: Pairing, status: PairingStatus) => void): this;
+    on(event: 'paired', listener: (topics: Topics) => void): this;
     patternInput(): Promise<void>;
     pairingOutcome(): Promise<Pairing>;
 }

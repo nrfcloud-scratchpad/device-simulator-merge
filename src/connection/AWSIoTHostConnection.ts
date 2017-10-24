@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { HostConnectionError, IHostConnection } from './HostConnection';
 import { ConfigurationData } from '../ConfigurationStorage';
-import { ShadowModel, ShadowModelDesired, ShadowModelReported, Topics } from '../ShadowModel';
+import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../ShadowModel';
 
 import * as awsIot from 'aws-iot-device-sdk';
 
@@ -9,8 +9,9 @@ let logger = require('winston');
 
 export class AWSIoTHostConnection extends EventEmitter implements IHostConnection {
     private config: ConfigurationData;
-    private topics: Topics;
     private mqtt: awsIot.device;
+    private d2c: string;
+    private c2d: string;
 
     constructor(config: ConfigurationData, newLogger?: any) {
         super();
@@ -27,27 +28,45 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
     }
 
     async updateShadow(reported: ShadowModelReported): Promise<void> {
-        this.mqtt.publish(`${this.getShadowBaseTopic()}/update`, JSON.stringify(reported));
+        const root = {
+            state: {
+                reported
+            }
+        };
+
+        return new Promise<void>((resolve, reject) => {
+            this.mqtt.publish(`${this.getShadowBaseTopic()}/update`, JSON.stringify(root), null, error => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
     }
 
     connect(): Promise<void> {
         logger.debug(`Connecting to nRF Cloud stage ${this.config.stage}`);
 
         return new Promise<void>((resolveConnect, rejectConnect) => {
-            try {
-                this.mqtt = new awsIot.device({
-                    ca: this.config.caCert,
-                    clientCert: this.config.clientCert,
-                    privateKey: this.config.privateKey,
-                    clientId: this.config.clientId,
-                    host: this.config.brokerHostname,
-                    region: this.config.region
-                });
+            const connectOptions: any = {
+                privateKey: Buffer.from(this.config.privateKey, 'utf8'),
+                clientCert: Buffer.from(this.config.clientCert, 'utf8'),
+                caCert: Buffer.from(this.config.caCert, 'utf8'),
+                clientId: this.config.clientId,
+                region: this.config.region || 'us-east-1',
+                host: this.config.brokerHostname || 'a2n7tk1kp18wix.iot.us-east-1.amazonaws.com',
+                debug: true
+            };
 
-                this.mqtt.subscribe(`${this.getShadowBaseTopic()}/get/accepted`);
-                this.mqtt.subscribe(`${this.getShadowBaseTopic()}/delta`);
+            try {
+                this.mqtt = new awsIot.device(connectOptions);
+
+                const shadowBaseTopic = this.getShadowBaseTopic();
+
+                this.mqtt.subscribe(`${shadowBaseTopic}/get/accepted`);
+                this.mqtt.subscribe(`${shadowBaseTopic}/update/delta`);
             } catch (error) {
-                logger.error(`Error connecting to nRF Cloud. ${error}`);
                 rejectConnect(error);
             }
 
@@ -90,21 +109,22 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
                 const shadowBaseTopic = this.getShadowBaseTopic();
 
+                let parsed: any;
+
                 switch (topic) {
                     case `${shadowBaseTopic}/get/accepted`:
-                        const shadow = <ShadowModel>JSON.parse(payload);
+                        parsed = JSON.parse(payload);
+                        const shadow = <ShadowModel>Object.assign({}, parsed.state);
                         this.emit('shadowGetAccepted', shadow);
                         break;
                     case `${shadowBaseTopic}/update/delta`:
-                        const state = <ShadowModelDesired>JSON.parse(payload);
-                        this.emit('shadowDelta', state);
+                        parsed = JSON.parse(payload);
+                        const delta: any = <ShadowModelDesired>Object.assign({}, parsed.state);
+                        this.emit('shadowDelta', delta);
                         break;
                     default:
-                        if (this.topics && this.topics.c2d && this.topics.c2d === topic) {
-                            this.emit('message', payload);
-                        } else {
-                            logger.error(`Received message on unknown topic '${topic}', message '${JSON.parse(payload)}'`);
-                        }
+                        parsed = JSON.parse(payload);
+                        this.emit('message', parsed);
                         break;
                 }
             });
@@ -118,9 +138,19 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         this.mqtt.unsubscribe(`${shadowBaseTopic}/update/delta`);
         this.mqtt.unsubscribe(`${shadowBaseTopic}/get`);
 
-        if (this.topics && this.topics.c2d) {
-            this.mqtt.unsubscribe(this.topics.c2d);
-        }
+        await new Promise<void>((resolve, reject) => {
+            if (this.c2d) {
+                this.mqtt.unsubscribe(this.c2d, null, (error: any) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                });
+            } else {
+                resolve();
+            }
+        });
     }
 
     async disconnect(): Promise<void> {
@@ -130,7 +160,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
     }
 
     async sendMessage(message: string): Promise<void> {
-        if (!this.topics || !this.topics.d2c) {
+        if (!this.d2c) {
             throw new Error(`Application topic to send message to not provided.`);
         }
 
@@ -139,7 +169,26 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         }
 
         return new Promise<void>((resolve, reject) => {
-            this.mqtt.publish(this.topics.d2c, message, null, error => {
+            this.mqtt.publish(this.d2c, message, null, (error: any) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    async setTopics(c2d: string, d2c: string): Promise<void> {
+        if (this.c2d) {
+            throw new HostConnectionError(`Already subscribed to topic '${this.c2d}'. This can not be changed. Disconnect and subscribe again.`);
+        }
+
+        this.c2d = c2d;
+        this.d2c = d2c;
+
+        return new Promise<void>((resolve, reject) => {
+            this.mqtt.subscribe(c2d, null, error => {
                 if (error) {
                     reject(error);
                 } else {
