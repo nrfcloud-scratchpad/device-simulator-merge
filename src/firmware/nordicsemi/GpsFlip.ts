@@ -2,7 +2,7 @@ import { FirmwareError, FirmwareState, IFirmware, MessageStatus } from '../Firmw
 import { ConfigurationData } from '../../ConfigurationStorage';
 import { IPairingEngine } from '../../pairing/PairingEngine';
 import { IHostConnection } from '../../connection/HostConnection';
-import { ShadowModel, ShadowModelDesired } from '../../ShadowModel';
+import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../../ShadowModel';
 import { ISensor } from '../../sensors/Sensor';
 import { DemopackMessage } from './GpsFlipModel';
 import { Pairing } from '../../pairing/Pairing';
@@ -84,7 +84,7 @@ export class GpsFlip implements IFirmware {
         this.pairingEngine.on('pairingUpdate', (state, status) => {
             this.hostConnection.updateShadow({
                 pairing: state,
-                pairingStatus: status
+                pairingStatus: status,
             });
         });
 
@@ -99,10 +99,13 @@ export class GpsFlip implements IFirmware {
         this.hostConnection.on('shadowDelta', async (delta: ShadowModelDesired) => {
             if (delta.pairing) {
                 this.pairingEngine.updatePairingState(delta.pairing);
-            }
 
-            if (delta.pairing.state === 'paired') {
-                await this.startApplication(delta.pairing);
+                if (delta.pairing.state === 'paired') {
+                    await this.startApplication(delta.pairing);
+                }
+            } else {
+                // Some application specific state is desired, reply back as reported and process afterwards
+                await this.hostConnection.updateShadow(<ShadowModelReported>delta);
             }
         });
 

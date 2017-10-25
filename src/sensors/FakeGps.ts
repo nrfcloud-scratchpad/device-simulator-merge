@@ -91,7 +91,7 @@ export class FakeGps extends EventEmitter implements ISensor {
         const fileExists = await new Promise((resolve) => fs.exists(this.nmeaRecording, resolve));
 
         if (!fileExists) {
-            throw `NMEA recording with filename '${fileExists}' does not exist.`;
+            throw `NMEA recording with filename '${this.nmeaRecording}' does not exist.`;
         }
 
         this.setupNmeaReader();
