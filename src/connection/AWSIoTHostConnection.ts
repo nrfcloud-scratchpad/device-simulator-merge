@@ -94,12 +94,11 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
             });
 
             this.mqtt.on('close', () => {
-                logger.info(`Disconnected from nRF Cloud.`);
                 this.emit('disconnect');
             });
 
             this.mqtt.on('reconnect', () => {
-                logger.info('Reconnecting to nRF Cloud.');
+                this.emit('reconnect');
             });
 
             this.mqtt.on('message', (topic: string, payload: any) => {

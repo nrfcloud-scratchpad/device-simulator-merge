@@ -15,6 +15,7 @@ export class GpsFlip implements IFirmware {
     state: FirmwareState;
     hostConnection: IHostConnection;
     sensors: Map<string, ISensor>;
+    private applicationStarted: boolean;
 
     constructor(config: ConfigurationData,
                 pairingEngine: IPairingEngine,
@@ -33,6 +34,7 @@ export class GpsFlip implements IFirmware {
             }
         };
         this.sensors = sensors;
+        this.applicationStarted = false;
 
         if (newLogger) {
             logger = newLogger;
@@ -62,6 +64,7 @@ export class GpsFlip implements IFirmware {
             await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
             await this.sensors.get('gps').start();
             await this.sensors.get('acc').start();
+            this.applicationStarted = true;
         }
     }
 
@@ -103,7 +106,15 @@ export class GpsFlip implements IFirmware {
             }
         });
 
+        this.hostConnection.on('reconnect', () => {
+            if (this.applicationStarted) {
+                this.sensors.get('gps').start();
+                this.sensors.get('acc').start();
+            }
+        });
+
         this.hostConnection.on('connect', () => {
+            logger.info('on connect');
         });
 
         this.hostConnection.on('disconnect', () => {
