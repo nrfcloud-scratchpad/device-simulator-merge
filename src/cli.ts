@@ -14,10 +14,24 @@ import { FakeGps } from './sensors/FakeGps';
 import { DummySensor } from './sensors/DummySensor';
 import { AWSIoTHostConnection } from './connection/AWSIoTHostConnection';
 
-let logger = require('winston');
+let winston = require('winston');
 let ran = false;
 
+function getLogger() {
+    const transports = [
+        new winston.transports.Console({
+            name: 'console',
+            level: 'debug',
+            timestamp: () => new Date(),
+        })
+    ];
+
+    return new winston.Logger({transports});
+}
+
 async function startSimulation(configFilename: string, firmwareNsrn: string): Promise<number> {
+    const logger = getLogger();
+
     if (configFilename == null) {
         configFilename = path.join(os.homedir(), '.nrfcloud', 'simulator_config.json');
     }
@@ -54,17 +68,15 @@ async function startSimulation(configFilename: string, firmwareNsrn: string): Pr
     return firmware.main();
 }
 
-program
-    .command('start <firmware> [config]')
-    .action((firmware: string, config: string) => {
-        ran = true;
+program.command('start <firmware> [config]').action((firmware: string, config: string) => {
+    ran = true;
 
-        startSimulation(config, firmware).then(retval => {
-            console.log(`Simulator stopped with return value ${retval}.`);
-        }).catch(error => {
-            process.stderr.write(`${red(error)}\n`);
-        });
+    startSimulation(config, firmware).then(retval => {
+        console.log(`Simulator stopped with return value ${retval}.`);
+    }).catch(error => {
+        process.stderr.write(`${red(error)}\n`);
     });
+});
 
 program.parse(process.argv);
 

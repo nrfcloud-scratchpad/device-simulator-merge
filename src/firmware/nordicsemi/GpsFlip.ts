@@ -17,11 +17,13 @@ export class GpsFlip implements IFirmware {
     sensors: Map<string, ISensor>;
     private applicationStarted: boolean;
 
-    constructor(config: ConfigurationData,
-                pairingEngine: IPairingEngine,
-                hostConnection: IHostConnection,
-                sensors: Map<string, ISensor>,
-                newLogger?: any) {
+    constructor(
+        config: ConfigurationData,
+        pairingEngine: IPairingEngine,
+        hostConnection: IHostConnection,
+        sensors: Map<string, ISensor>,
+        newLogger?: any
+    ) {
         this.config = config;
         this.pairingEngine = pairingEngine;
         this.hostConnection = hostConnection;
@@ -30,8 +32,8 @@ export class GpsFlip implements IFirmware {
             connected: false,
             messages: <MessageStatus>{
                 sent: 0,
-                received: 0
-            }
+                received: 0,
+            },
         };
         this.sensors = sensors;
         this.applicationStarted = false;
@@ -126,8 +128,10 @@ export class GpsFlip implements IFirmware {
         });
 
         this.hostConnection.on('message', (message: any) => {
+            const demopackMessage = <DemopackMessage>Object.assign({}, message);
+
             // TODO: parse firmware specific protocol
-            logger.debug(`Received message ${message}`);
+            logger.debug(`Received message ${demopackMessage.messageId}`);
         });
 
         this.sensors.get('gps').on('data', (timestamp: number, data) => {
