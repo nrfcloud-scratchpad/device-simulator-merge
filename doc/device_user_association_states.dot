@@ -1,0 +1,18 @@
+digraph {
+    initiate
+    waiting_for_pattern 
+    paired [peripheries=2]
+    
+    initiate -> waiting_for_pattern [style=solid]
+    waiting_for_pattern -> paired [style=solid, label="paired"]
+
+    waiting_for_pattern -> waiting_for_pattern [style=solid, label="steps"]
+    
+    waiting_for_pattern -> pattern_mismatch [style=solid, label="mismatch"]
+    pattern_mismatch -> waiting_for_pattern [style=solid]
+
+    waiting_for_pattern -> pattern_timeout  [style=solid, label="timeout"]
+    pattern_timeout -> waiting_for_pattern [style=solid]
+
+    paired -> initiate [style=dotted]
+}
