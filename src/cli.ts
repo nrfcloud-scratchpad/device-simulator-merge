@@ -13,16 +13,20 @@ import { ISensor } from './sensors/Sensor';
 import { FakeGps } from './sensors/FakeGps';
 import { DummySensor } from './sensors/DummySensor';
 import { AWSIoTHostConnection } from './connection/AWSIoTHostConnection';
+import { SwitchesMethod } from './pairing/methods/ButtonsMethod';
 
 let winston = require('winston');
 let ran = false;
+
+process.on('unhandledRejection', function (reason, p) {
+    console.log('Possibly Unhandled Rejection at: Promise ', p, ' reason: ', reason);
+});
 
 function getLogger() {
     const transports = [
         new winston.transports.Console({
             name: 'console',
-            level: 'debug',
-            timestamp: () => new Date(),
+            level: 'debug'
         })
     ];
 
@@ -45,7 +49,11 @@ async function startSimulation(configFilename: string, firmwareNsrn: string): Pr
     const configurationStorage = new FileConfigurationStorage(configFilename);
     const config = await configurationStorage.getConfiguration();
 
-    const pairingMethods = [new DummyMethod([1, 2, 3, 4, 5, 6])];
+    const pairingMethods = [
+        new DummyMethod([1, 2, 3, 4, 5, 6]),
+        new SwitchesMethod(4)
+    ];
+
     const pairingEngine = new PairingEngine(pairingMethods);
 
     const hostConnection = new AWSIoTHostConnection(config, logger);

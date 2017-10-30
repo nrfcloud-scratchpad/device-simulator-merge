@@ -2,7 +2,7 @@ import { IPairingMethod } from '../Pairing';
 
 export class DummyMethod implements IPairingMethod {
     methodName: string;
-    dataLength: number;
+    patternLength: number;
     dummyPattern: Array<number>;
 
     async retrievePattern(): Promise<Array<number>> {
@@ -10,7 +10,7 @@ export class DummyMethod implements IPairingMethod {
     }
 
     constructor(dummyPattern: Array<number>) {
-        this.dataLength = dummyPattern.length;
+        this.patternLength = dummyPattern.length;
         this.methodName = 'dummy';
         this.dummyPattern = dummyPattern;
     }

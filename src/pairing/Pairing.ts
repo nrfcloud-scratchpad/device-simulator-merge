@@ -1,6 +1,6 @@
 export interface IPairingMethod {
     readonly methodName: string;
-    readonly dataLength: number;
+    readonly patternLength: number;
 
     retrievePattern(length: number): Promise<Array<number>>;
 }

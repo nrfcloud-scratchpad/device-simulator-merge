@@ -3,23 +3,18 @@ import { IPairingMethod, Pairing, PairingStatus, Topics } from './Pairing';
 
 export interface IPairingEngine {
     updatePairingState(state: Pairing): void;
+
     on(event: 'pairingUpdate', listener: (state: Pairing, status: PairingStatus) => void): this;
+
     on(event: 'paired', listener: (topics: Topics) => void): this;
-    patternInput(): Promise<void>;
-    pairingOutcome(): Promise<Pairing>;
+
+    on(event: 'patternRetrieved', listener: (pairingStatus: PairingStatus) => void): this;
 }
 
 let logger = require('winston');
 
 export class PairingEngine extends EventEmitter implements IPairingEngine {
     readonly pairingMethods: Array<IPairingMethod>;
-
-    private patternPromise: Promise<PairingStatus>;
-    private patternPromiseReject: any;
-
-    private outcomePromise: Promise<Pairing>;
-    private outcomePromiseResolve: any;
-    private outcomePromiseReject: any;
     private previousState: string;
 
     private selectedPairingMethod: IPairingMethod;
@@ -33,18 +28,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
         }
     }
 
-    private cleanupOutcome() {
-        if (this.outcomePromise) {
-            this.outcomePromiseReject('State transition cancelled outcome.');
-        }
-
-        if (this.patternPromise) {
-            this.patternPromiseReject('State transition cancelled pattern.');
-        }
-    }
-
     private initiatePairing(state: Pairing) {
-        this.cleanupOutcome();
         this.emit('pairingUpdate', state, null);
     }
 
@@ -57,32 +41,26 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             throw new Error('attribute config.method does not exist.');
         }
 
+        // Report that we have received the initiate pairing method, process afterwards
+        this.emit('pairingUpdate', state, null);
+
         if (this.pairingMethods) {
             const foundMethod = this.pairingMethods.find(method => {
                 return method.methodName === state.config.method;
             });
 
-            this.emit('pairingUpdate', state, null);
-
             if (!foundMethod) {
-                // FIXME: handle this case
+                logger.error(`Pairing method ${state.config.method} is not registered with the pairing engine.`);
             } else {
                 this.selectedPairingMethod = foundMethod;
 
-                this.patternPromise = new Promise<PairingStatus>((resolve, reject) => {
-                    this.patternPromiseReject = reject;
-
-                    foundMethod.retrievePattern(state.config.length).then(pattern => {
-                        resolve(<PairingStatus>{
-                            pattern,
-                            method: foundMethod.methodName
-                        });
-                    }).catch(error => reject(error));
-                });
-
-                this.outcomePromise = new Promise<Pairing>((resolve, reject) => {
-                    this.outcomePromiseResolve = resolve;
-                    this.outcomePromiseReject = reject;
+                foundMethod.retrievePattern(state.config.length).then(pattern => {
+                    this.emit('pairingUpdate', null, <PairingStatus>{
+                        pattern,
+                        method: foundMethod.methodName
+                    });
+                }).catch(error => {
+                    logger.error(`Error retrieving pattern ${error}.`);
                 });
             }
         } else {
@@ -91,7 +69,6 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     private unknownState(state: Pairing) {
-        this.cleanupOutcome();
         throw new Error(`Shadow ask to set device in unknown state '${state.state}'`);
     }
 
@@ -109,55 +86,15 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                 break;
             case 'paired':
                 this.emit('pairingUpdate', state, null);
-
-                if (this.outcomePromise) {
-                    this.outcomePromiseResolve(state);
-                }
-
+                this.emit('paired');
                 break;
             case 'timeout':
-                this.emit('pairingUpdate', state, null);
-
-                if (this.patternPromise) {
-                    this.patternPromiseReject('timed out');
-                }
-
-                if (this.outcomePromise) {
-                    this.outcomePromiseResolve(state);
-                }
-
-                break;
             case 'pattern_mismatch':
                 this.emit('pairingUpdate', state, null);
-
-                if (this.outcomePromise) {
-                    this.outcomePromiseResolve(state);
-                }
-
                 break;
             default:
                 this.unknownState(state);
                 break;
         }
-    }
-
-    async patternInput(): Promise<void> {
-        if (!this.patternPromise) {
-            throw new Error('No pairing method set.');
-        }
-
-        const status = await this.patternPromise;
-        this.patternPromise = null;
-        this.emit('pairingUpdate', null, status);
-    }
-
-    async pairingOutcome(): Promise<Pairing> {
-        if (!this.outcomePromise) {
-            throw new Error('Not possible to get outcome.');
-        }
-
-        const state = await this.outcomePromise;
-        this.outcomePromise = null;
-        return state;
     }
 }
