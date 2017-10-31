@@ -60,6 +60,6 @@ describe('firmware directory', () => {
 
         const firmware = firmwareDirectory.getFirmware('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/1');
         expect(firmware).toBeDefined();
-        await firmware.main();
+        firmware.main();
     });
 });

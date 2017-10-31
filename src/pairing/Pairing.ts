@@ -3,13 +3,14 @@ export interface IPairingMethod {
     readonly patternLength: number;
 
     retrievePattern(length: number): Promise<Array<number>>;
+    cancelRetrievePattern(): Promise<void>;
 }
 
 export interface Pairing {
     config: PairingConfig | null;
     state: string;
-    iteration: number;
-    topics: Topics;
+    iteration: number | null;
+    topics: Topics | null;
 }
 
 export interface PairingConfig {

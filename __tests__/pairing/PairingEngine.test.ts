@@ -65,7 +65,8 @@ describe('device user association', () => {
                     method: 'dummy',
                     length: 6
                 },
-                state: 'pattern_wait'
+                state: 'pattern_wait',
+                topics: null
             });
 
             expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
@@ -119,7 +120,9 @@ describe('device user association', () => {
 
         // #1
         expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
-            state: 'initiate'
+            state: 'initiate',
+            config: null,  // setting to null clears this value in the shadow
+            topics: null,  // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
@@ -129,13 +132,16 @@ describe('device user association', () => {
                 method: 'dummy',
                 length: 6
             },
-            state: 'pattern_wait'
+            state: 'pattern_wait',
+            topics: null,
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
         // #3
         expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
-            state: 'timeout'
+            state: 'timeout',
+            config: null, // setting to null clears this value in the shadow
+            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
     });
@@ -182,7 +188,8 @@ describe('device user association', () => {
                     method: 'dummy',
                     length: 6
                 },
-                state: 'pattern_wait'
+                state: 'pattern_wait',
+                topics: null
             });
             expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -238,7 +245,9 @@ describe('device user association', () => {
         expect(pairingUpdateMock).toHaveBeenCalledTimes(6);
 
         expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
-            state: 'initiate'
+            state: 'initiate',
+            config: null, // setting to null clears this value in the shadow
+            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
@@ -247,13 +256,16 @@ describe('device user association', () => {
                 method: 'dummy',
                 length: 6
             },
-            state: 'pattern_wait'
+            state: 'pattern_wait',
+            topics: null
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
         // Third callback
         expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
-            state: 'timeout'
+            state: 'timeout',
+            config: null, // setting to null clears this value in the shadow
+            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
 
@@ -263,13 +275,15 @@ describe('device user association', () => {
                 method: 'dummy',
                 length: 6
             },
-            state: 'pattern_wait'
+            state: 'pattern_wait',
+            topics: null,
         });
         expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
 
         // Fifth callback
         expect(pairingUpdateMock.mock.calls[4][0]).toEqual(<Pairing>{
-            state: 'paired'
+            state: 'paired',
+            config: null
         });
         expect(pairingUpdateMock.mock.calls[4][1]).toBeNull();
     });
