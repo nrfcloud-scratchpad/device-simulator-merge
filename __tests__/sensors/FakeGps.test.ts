@@ -3,10 +3,16 @@ import { ISensor } from '../../src/sensors/Sensor';
 
 let fakeGps: ISensor;
 
-const nmeaRecording = '/tmp/output.txt';
+const nmeaRecording = '__tests__/sensors/nmea-recording.txt';
+
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 
 let dataMock: any;
 let stoppedMock: any;
+
+process.on('unhandledRejection', function (reason, p) {
+    console.log('Possibly Unhandled Rejection at: Promise ', p, ' reason: ', reason);
+});
 
 describe('fake gps', () => {
     beforeEach(() => {
@@ -20,11 +26,15 @@ describe('fake gps', () => {
     });
 
     it('shall be able to receive data from recorded nmea sentences', async () => {
-        fakeGps.start();
+        await fakeGps.start();
 
-        await new Promise<void>(resolve => setTimeout(resolve, 2000));
+        await new Promise<void>(resolve => {
+            setTimeout(() => {
+                resolve();
+            }, 5000);
+        });
 
-        expect(dataMock).toHaveBeenCalled();
+        expect(dataMock).toHaveBeenCalledTimes(2);
         expect(stoppedMock).toHaveBeenCalledTimes(1);
     });
 });

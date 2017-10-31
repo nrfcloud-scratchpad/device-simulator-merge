@@ -58,6 +58,10 @@ export class FakeGps extends EventEmitter implements ISensor {
             this.cleanUp();
         });
 
+        this.reader.on('end', () => {
+            this.cleanUp();
+        });
+
         // TODO: setup error handling/file end
         this.nmeaTick = setInterval(() => {
             this.nextNmeaTick();
@@ -65,7 +69,6 @@ export class FakeGps extends EventEmitter implements ISensor {
     }
 
     private nextNmeaTick() {
-
         if (this.reader && this.readStream && this.readStream.isPaused()) {
             this.reader.resume();
         }
@@ -98,6 +101,8 @@ export class FakeGps extends EventEmitter implements ISensor {
     }
 
     private cleanUp() {
+        this.emit('stopped');
+
         if (this.nmeaTick) {
             clearInterval(this.nmeaTick);
         }

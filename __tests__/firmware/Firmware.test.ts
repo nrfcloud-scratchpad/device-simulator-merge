@@ -58,7 +58,7 @@ describe('firmware directory', () => {
         expect(firmwareList.length).toBe(1);
         expect(firmwareList[0]).toBe('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0');
 
-        const firmware = firmwareDirectory.getFirmware('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/1');
+        const firmware = firmwareDirectory.getFirmware('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0');
         expect(firmware).toBeDefined();
         firmware.main();
     });
