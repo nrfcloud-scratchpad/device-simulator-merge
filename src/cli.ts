@@ -26,7 +26,7 @@ function getLogger() {
     const transports = [
         new winston.transports.Console({
             name: 'console',
-            level: 'debug'
+            level: 'info'
         })
     ];
 

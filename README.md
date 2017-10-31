@@ -28,4 +28,4 @@ If you have curl installed:
     
 Example:
 
-    node dist/cli.js start nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/1 -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt
+    node dist/cli.js start nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0 -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt

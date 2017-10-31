@@ -31,7 +31,7 @@ export class FirmwareDirectory {
     }
 
     create() {
-        this.firmware.set('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/1',
+        this.firmware.set('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0',
             new GpsFlip(
                 this.config,
                 this.pairingEngine,
