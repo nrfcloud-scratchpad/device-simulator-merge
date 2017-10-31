@@ -9,6 +9,10 @@ export class DummyMethod implements IPairingMethod {
         return this.dummyPattern;
     }
 
+    cancelRetrievePattern(): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
     constructor(dummyPattern: Array<number>) {
         this.patternLength = dummyPattern.length;
         this.methodName = 'dummy';

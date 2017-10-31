@@ -33,14 +33,14 @@ function getLogger() {
     return new winston.Logger({transports});
 }
 
-async function startSimulation(configFilename: string, firmwareNsrn: string): Promise<number> {
+async function startSimulation(configFilename: string, firmwareNsrn: string, options: any): Promise<number> {
     const logger = getLogger();
 
     if (configFilename == null) {
         configFilename = path.join(os.homedir(), '.nrfcloud', 'simulator_config.json');
     }
 
-    const exists = await new Promise<boolean>((resolve) => fs.exists(configFilename, resolve));
+    const exists = await new Promise<boolean>((resolve) => fs.exists(path.resolve(configFilename), resolve));
 
     if (!exists) {
         throw `Configuration file '${configFilename}' not found.`;
@@ -59,7 +59,11 @@ async function startSimulation(configFilename: string, firmwareNsrn: string): Pr
     const hostConnection = new AWSIoTHostConnection(config, logger);
 
     const sensors: Map<string, ISensor> = new Map<string, ISensor>();
-    sensors.set('gps', new FakeGps('/tmp/output.txt', ['GPGGA']));
+
+    if (options && options.nmea) {
+        sensors.set('gps', new FakeGps(options.nmea, ['GPGGA']));
+    }
+
     sensors.set('acc', new DummySensor(new Uint8Array([1, 2, 3, 4, 5]), 1000));
 
     const firmwareDirectory = new FirmwareDirectory(
@@ -76,10 +80,15 @@ async function startSimulation(configFilename: string, firmwareNsrn: string): Pr
     return firmware.main();
 }
 
-program.command('start <firmware> [config]').action((firmware: string, config: string) => {
+program.command('start <firmware>')
+.option('-c, --config [config]', 'Configuration file containing credentials.')
+.option('-n, --nmea [nmea]', 'File containing NMEA sentences.')
+.action((cmd, env) => {
     ran = true;
 
-    startSimulation(config, firmware).then(retval => {
+    startSimulation(env['config'], cmd, {
+        nmea: env['nmea']
+    }).then(retval => {
         console.log(`Simulator stopped with return value ${retval}.`);
     }).catch(error => {
         process.stderr.write(`${red(error)}\n`);

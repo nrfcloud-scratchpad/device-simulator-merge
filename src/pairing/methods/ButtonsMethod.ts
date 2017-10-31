@@ -7,6 +7,7 @@ export class SwitchesMethod implements IPairingMethod {
     numberOfButtons: number;
     pattern: Buffer;
     idx: number;
+    rejectRetrievePattern: any;
 
     addKeypress(key: string) {
         const keyId = key.charCodeAt(0) - '0'.charCodeAt(0);
@@ -28,7 +29,9 @@ export class SwitchesMethod implements IPairingMethod {
         this.patternLength = patternLength;
         console.log(`Press buttons 1-${this.numberOfButtons} ${this.patternLength} times.`);
 
-        return new Promise<Array<number>>(resolve => {
+        return new Promise<Array<number>>((resolve, reject) => {
+            this.rejectRetrievePattern = reject;
+
             readline.emitKeypressEvents(process.stdin);
 
             if (process.stdin.isTTY) {
@@ -50,10 +53,25 @@ export class SwitchesMethod implements IPairingMethod {
                         process.stdin.setRawMode(false);
                     }
 
+                    this.rejectRetrievePattern = null;
                     resolve(<Array<number>>Array.prototype.slice.call(this.pattern, 0));
                 }
             });
         });
+    }
+
+    async cancelRetrievePattern(): Promise<void> {
+        if (this.rejectRetrievePattern) {
+            this.rejectRetrievePattern('Canceled retrieval of pattern');
+        }
+
+        process.stdin.pause();
+
+        if (process.stdin.isTTY) {
+            process.stdin.setRawMode(false);
+        }
+
+        process.stdin.removeAllListeners('keypress');
     }
 
     constructor(numberOfButtons: number) {

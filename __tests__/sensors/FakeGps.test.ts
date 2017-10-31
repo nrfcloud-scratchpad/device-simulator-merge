@@ -20,9 +20,9 @@ describe('fake gps', () => {
     });
 
     it('shall be able to receive data from recorded nmea sentences', async () => {
-        await fakeGps.start();
+        fakeGps.start();
 
-        await new Promise<void>(resolve => setTimeout(resolve, 4000));
+        await new Promise<void>(resolve => setTimeout(resolve, 2000));
 
         expect(dataMock).toHaveBeenCalled();
         expect(stoppedMock).toHaveBeenCalledTimes(1);

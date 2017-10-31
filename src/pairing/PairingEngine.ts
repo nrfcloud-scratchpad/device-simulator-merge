@@ -29,19 +29,40 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     private initiatePairing(state: Pairing) {
+        // Cleanup stale states by sending null back to shadow
+        state.config = null;
+        state.topics = null;
+
         this.emit('pairingUpdate', state, null);
     }
 
+    private async cancelRetrievePattern(): Promise<void> {
+        if (this.pairingMethods && this.selectedPairingMethod) {
+            const foundMethod = this.pairingMethods.find(method => {
+                return method.methodName === this.selectedPairingMethod.methodName;
+            });
+
+            if (!foundMethod) {
+                logger.error(`Pairing method ${this.selectedPairingMethod.methodName} is not registered with the pairing engine.`);
+            } else {
+                await foundMethod.cancelRetrievePattern();
+            }
+        }
+    }
+
     private waitingForPattern(state: Pairing) {
-        if (!state.config) {
-            throw new Error('attribute config does not exist.');
+        if (state.config == null) {
+            logger.error('attribute config does not exist.');
+            return;
         }
 
-        if (!state.config.method) {
-            throw new Error('attribute config.method does not exist.');
+        if (state.config.method == null) {
+            logger.error('attribute config.method does not exist.');
+            return;
         }
 
         // Report that we have received the initiate pairing method, process afterwards
+        state.topics = null; // Cleanup stale states by sending null back to shadow
         this.emit('pairingUpdate', state, null);
 
         if (this.pairingMethods) {
@@ -85,12 +106,19 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                 this.waitingForPattern(state);
                 break;
             case 'paired':
+                // Cleanup stale states by sending null back to shadow
+                state.config = null;
                 this.emit('pairingUpdate', state, null);
                 this.emit('paired');
                 break;
             case 'timeout':
             case 'pattern_mismatch':
+                // Cleanup stale states by sending null back to shadow
+                state.config = null;
+                state.topics = null;
+
                 this.emit('pairingUpdate', state, null);
+                this.cancelRetrievePattern();
                 break;
             default:
                 this.unknownState(state);

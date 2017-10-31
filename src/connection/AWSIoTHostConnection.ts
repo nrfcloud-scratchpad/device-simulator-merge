@@ -12,6 +12,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
     private mqtt: awsIot.device;
     private d2c: string;
     private c2d: string;
+    private deltaEnabled: boolean;
 
     constructor(config: ConfigurationData, newLogger?: any) {
         super();
@@ -21,6 +22,8 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
         if (newLogger) {
             logger = newLogger;
         }
+
+        this.deltaEnabled = false;
     }
 
     private getShadowBaseTopic(): string {
@@ -56,7 +59,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                 clientId: this.config.clientId,
                 region: this.config.region || 'us-east-1',
                 host: this.config.brokerHostname || 'a2n7tk1kp18wix.iot.us-east-1.amazonaws.com',
-                debug: true
+                debug: false
             };
 
             try {
@@ -65,7 +68,6 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                 const shadowBaseTopic = this.getShadowBaseTopic();
 
                 this.mqtt.subscribe(`${shadowBaseTopic}/get/accepted`);
-                this.mqtt.subscribe(`${shadowBaseTopic}/update/delta`);
             } catch (error) {
                 rejectConnect(error);
             }
@@ -115,9 +117,16 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                         parsed = JSON.parse(payload);
                         const shadow = <ShadowModel>Object.assign({}, parsed.state);
                         this.emit('shadowGetAccepted', shadow);
+
+                        if (!this.deltaEnabled) {
+                            this.deltaEnabled = true;
+                            this.mqtt.subscribe(`${shadowBaseTopic}/update/delta`);
+                        }
+
                         break;
                     case `${shadowBaseTopic}/update/delta`:
                         parsed = JSON.parse(payload);
+                        logger.debug(`delta received ${JSON.stringify(parsed)}`);
                         const delta: any = <ShadowModelDesired>Object.assign({}, parsed.state);
                         this.emit('shadowDelta', delta);
                         break;

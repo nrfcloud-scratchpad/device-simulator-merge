@@ -22,8 +22,7 @@ export class GpsFlip implements IFirmware {
         pairingEngine: IPairingEngine,
         hostConnection: IHostConnection,
         sensors: Map<string, ISensor>,
-        newLogger?: any
-    ) {
+        newLogger?: any) {
         this.config = config;
         this.pairingEngine = pairingEngine;
         this.hostConnection = hostConnection;
@@ -62,11 +61,17 @@ export class GpsFlip implements IFirmware {
     }
 
     private async startApplication(pairing: Pairing): Promise<void> {
-        if (pairing.state === 'paired' && pairing.topics && pairing.topics.d2c) {
-            await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
-            await this.sensors.get('gps').start();
-            await this.sensors.get('acc').start();
-            this.applicationStarted = true;
+        if (pairing.state === 'paired') {
+            if (pairing.topics && pairing.topics.d2c) {
+                await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
+                await this.sensors.get('gps').start();
+                await this.sensors.get('acc').start();
+                this.applicationStarted = true;
+
+                logger.info(`Pairing done, application started.`);
+            } else {
+                logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
+            }
         }
     }
 
@@ -84,9 +89,9 @@ export class GpsFlip implements IFirmware {
         }
 
         this.pairingEngine.on('pairingUpdate', (state, status) => {
-            logger.info(`state: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
+            logger.debug(`on pairingUpdate, state: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
             this.hostConnection.updateShadow({
-                pairing: state,
+                pairing: state === null ? undefined : state,
                 pairingStatus: status,
             });
         });
@@ -108,11 +113,14 @@ export class GpsFlip implements IFirmware {
                 }
             } else {
                 // Some application specific state is desired, reply back as reported and process afterwards
+                logger.debug(`shadow; json data not related to pairing: ${JSON.stringify(delta)}`);
                 await this.hostConnection.updateShadow(<ShadowModelReported>delta);
             }
         });
 
         this.hostConnection.on('reconnect', () => {
+            logger.info('Reconnecting to nRF Cloud.');
+
             if (this.applicationStarted) {
                 this.sensors.get('gps').start();
                 this.sensors.get('acc').start();
@@ -120,19 +128,19 @@ export class GpsFlip implements IFirmware {
         });
 
         this.hostConnection.on('connect', () => {
-            logger.info('on connect');
+            logger.info('Connected to nRF Cloud.');
         });
 
         this.hostConnection.on('disconnect', () => {
+            logger.info('Disconnected from nRF Cloud.');
+
             this.sensors.get('gps').stop();
             this.sensors.get('acc').stop();
         });
 
         this.hostConnection.on('message', (message: any) => {
             const demopackMessage = <DemopackMessage>Object.assign({}, message);
-
-            // TODO: parse firmware specific protocol
-            logger.debug(`Received message ${demopackMessage.messageId}`);
+            logger.info(`Received message ${demopackMessage.messageId}`);
         });
 
         this.sensors.get('gps').on('data', (timestamp: number, data) => {
@@ -141,6 +149,7 @@ export class GpsFlip implements IFirmware {
 
         await this.hostConnection.connect();
 
-        return 0;
+        return new Promise<number>(() => {
+        });
     }
 }
