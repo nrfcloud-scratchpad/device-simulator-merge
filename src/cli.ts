@@ -83,7 +83,7 @@ async function startSimulation(configFilename: string, firmwareNsrn: string, opt
 program.command('start <firmware>')
 .option('-c, --config [config]', 'Configuration file containing credentials.')
 .option('-n, --nmea [nmea]', 'File containing NMEA sentences.')
-.action((cmd, env) => {
+.action((cmd: any, env: any) => {
     ran = true;
 
     startSimulation(env['config'], cmd, {
