@@ -11,7 +11,7 @@ To create a device configuration use [nrfcloud-cli](https://github.com/NordicPla
  
 Example usage for adding a device to nRF Cloud (this is not associating a device with a tenant):
     
-    node dist/cli.js device-register -t nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/2 <your device id>
+    node dist/cli.js device-register -t nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0 <your device id>
 
 ### NMEA sentences
 
