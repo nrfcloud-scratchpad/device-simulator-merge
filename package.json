@@ -18,14 +18,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NordicSemiconductor/nrfcloud-device-simulator.git"
+    "url": "git+https://github.com/NordicPlayground/nrfcloud-device-simulator.git"
   },
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/NordicSemiconductor/nrfcloud-device-simulator/issues"
+    "url": "https://github.com/NordicPlayground/nrfcloud-device-simulator/issues"
   },
-  "homepage": "https://github.com/NordicSemiconductor/nrfcloud-device-simulator#readme",
+  "homepage": "https://github.com/NordicPlayground/nrfcloud-device-simulator#readme",
   "devDependencies": {
     "@types/aws-iot-device-sdk": "^2.1.0",
     "@types/jest": "^21.1.2",
