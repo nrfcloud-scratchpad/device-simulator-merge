@@ -1,6 +1,6 @@
 import { IPairingEngine, PairingEngine } from '../../src/pairing/PairingEngine';
 import { DummyMethod } from '../../src/pairing/methods/DummyMethod';
-import { Pairing, PairingStatus, PairingConfig } from '../../src/pairing/Pairing';
+import { Pairing, PairingStatus, PairingConfig, PairingTopics } from '../../src/pairing/Pairing';
 
 let pairingUpdateMock: any;
 let pairedMock: any;
@@ -43,7 +43,7 @@ describe('device user association', () => {
         // STATE: paired
 
         // Since the retrieval of pattern data is async (callback #3), we have to call the remaining code in a later iteration
-        setTimeout(() => {
+        setTimeout(done => {
             pairingEngine.updatePairingState(<Pairing>{
                 state: 'paired'
             });
@@ -66,7 +66,6 @@ describe('device user association', () => {
                     length: 6
                 },
                 state: 'pattern_wait',
-                topics: null
             });
 
             expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
@@ -80,12 +79,15 @@ describe('device user association', () => {
 
             // #4
             expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
-                state: 'paired'
+                state: 'paired',
+                config: null,
             });
             expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
 
 
             expect(pairedMock.mock.calls.lengthAdjust).toBe(1);
+
+            done();
         }, 1);
     });
 
@@ -121,8 +123,6 @@ describe('device user association', () => {
         // #1
         expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate',
-            config: null,  // setting to null clears this value in the shadow
-            topics: null,  // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
@@ -133,7 +133,6 @@ describe('device user association', () => {
                 length: 6
             },
             state: 'pattern_wait',
-            topics: null,
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -141,7 +140,6 @@ describe('device user association', () => {
         expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
             state: 'timeout',
             config: null, // setting to null clears this value in the shadow
-            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
     });
@@ -168,7 +166,7 @@ describe('device user association', () => {
         // Engine shall report back with status from pairing input (#3)
 
         // Since the retrieval of pattern data is async (callback #3), we have to call the remaining code in a later iteration
-        setTimeout(() => {
+        setTimeout(done => {
             // STATE: pattern_mismatch
             pairingEngine.updatePairingState(<Pairing>{
                 state: 'pattern_mismatch'
@@ -189,7 +187,6 @@ describe('device user association', () => {
                     length: 6
                 },
                 state: 'pattern_wait',
-                topics: null
             });
             expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -202,9 +199,12 @@ describe('device user association', () => {
 
             // Fourth callback
             expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
-                state: 'pattern_mismatch'
+                state: 'pattern_mismatch',
+                config: null,
             });
             expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
+
+            done();
         }, 0);
     });
 
@@ -239,15 +239,17 @@ describe('device user association', () => {
         });
 
         pairingEngine.updatePairingState(<Pairing>{
-            state: 'paired'
+            state: 'paired',
+            topics: <PairingTopics>{
+                d2c: '--d2c',
+                c2d: 'c2d--'
+            }
         });
 
         expect(pairingUpdateMock).toHaveBeenCalledTimes(6);
 
         expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
             state: 'initiate',
-            config: null, // setting to null clears this value in the shadow
-            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
 
@@ -257,7 +259,6 @@ describe('device user association', () => {
                 length: 6
             },
             state: 'pattern_wait',
-            topics: null
         });
         expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
 
@@ -265,7 +266,6 @@ describe('device user association', () => {
         expect(pairingUpdateMock.mock.calls[2][0]).toEqual(<Pairing>{
             state: 'timeout',
             config: null, // setting to null clears this value in the shadow
-            topics: null, // setting to null clears this value in the shadow
         });
         expect(pairingUpdateMock.mock.calls[2][1]).toBeNull();
 
@@ -276,14 +276,17 @@ describe('device user association', () => {
                 length: 6
             },
             state: 'pattern_wait',
-            topics: null,
         });
         expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
 
         // Fifth callback
         expect(pairingUpdateMock.mock.calls[4][0]).toEqual(<Pairing>{
             state: 'paired',
-            config: null
+            config: null,
+            topics: <PairingTopics>{
+                c2d: 'c2d--',
+                d2c: '--d2c'
+            }
         });
         expect(pairingUpdateMock.mock.calls[4][1]).toBeNull();
     });

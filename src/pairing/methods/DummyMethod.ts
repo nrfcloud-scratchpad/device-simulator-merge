@@ -10,7 +10,7 @@ export class DummyMethod implements IPairingMethod {
     }
 
     cancelRetrievePattern(): Promise<void> {
-        throw new Error('Method not implemented.');
+        return;
     }
 
     constructor(dummyPattern: Array<number>) {
