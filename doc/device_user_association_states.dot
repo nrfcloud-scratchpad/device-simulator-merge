@@ -1,18 +1,20 @@
 digraph {
     initiate
-    waiting_for_pattern 
+    pattern_wait
+    pattern_mismatch
+    timeout 
     paired [peripheries=2]
     
-    initiate -> waiting_for_pattern [style=solid]
-    waiting_for_pattern -> paired [style=solid, label="paired"]
+    initiate -> pattern_wait [style=solid]
+    pattern_wait -> paired [style=solid, label="associated with tenant"]
 
-    waiting_for_pattern -> waiting_for_pattern [style=solid, label="steps"]
+    pattern_wait -> pattern_wait [style=solid, label="iterations"]
     
-    waiting_for_pattern -> pattern_mismatch [style=solid, label="mismatch"]
-    pattern_mismatch -> waiting_for_pattern [style=solid]
+    pattern_wait -> pattern_mismatch [style=solid, label="mismatch"]
+    pattern_mismatch -> initiate [style=solid]
 
-    waiting_for_pattern -> pattern_timeout  [style=solid, label="timeout"]
-    pattern_timeout -> waiting_for_pattern [style=solid]
+    pattern_wait -> timeout  [style=solid, label="timeout"]
+    timeout -> initiate [style=solid]
 
-    paired -> initiate [style=dotted]
+    paired -> initiate [style=dotted, label="dissociate with tenant"]
 }
