@@ -10,10 +10,6 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
 let dataMock: any;
 let stoppedMock: any;
 
-process.on('unhandledRejection', function (reason, p) {
-    console.log('Possibly Unhandled Rejection at: Promise ', p, ' reason: ', reason);
-});
-
 describe('fake gps', () => {
     beforeEach(() => {
         fakeGps = new FakeGps(nmeaRecording, ['GPGGA', 'GPGLL']);
@@ -36,5 +32,7 @@ describe('fake gps', () => {
 
         expect(dataMock).toHaveBeenCalledTimes(2);
         expect(stoppedMock).toHaveBeenCalledTimes(1);
+
+        console.log('ASDF');
     });
 });
