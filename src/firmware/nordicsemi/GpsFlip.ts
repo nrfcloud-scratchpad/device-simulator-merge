@@ -89,7 +89,7 @@ export class GpsFlip implements IFirmware {
         }
 
         this.pairingEngine.on('pairingUpdate', (state, status) => {
-            logger.debug(`on pairingUpdate, state: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
+            logger.debug(`gpsFlip; updating shadow -> reported.pairing: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
             this.hostConnection.updateShadow({
                 pairing: state === null ? undefined : state,
                 pairingStatus: status,

@@ -26,6 +26,7 @@ describe('fake gps', () => {
 
         await new Promise<void>(resolve => {
             setTimeout(() => {
+                resolve();
             }, 5000);
         });
 

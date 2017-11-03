@@ -126,7 +126,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
                         break;
                     case `${shadowBaseTopic}/update/delta`:
                         parsed = JSON.parse(payload);
-                        logger.debug(`delta received ${JSON.stringify(parsed)}`);
+                        logger.debug(`delta received ${JSON.stringify(parsed.state)}`);
                         const delta: any = <ShadowModelDesired>Object.assign({}, parsed.state);
                         this.emit('shadowDelta', delta);
                         break;

@@ -23,7 +23,7 @@ export interface IPairingMethod {
 }
 
 export class Pairing {
-    state: string;
+    state?: string;
     [key: string]: any;
 }
 
@@ -33,19 +33,19 @@ export class PairingConfig {
     readonly iteration?: number;
 
     constructor(method: string, length: number, iteration?: number) {
-        this.method = NonEmptyStringType(method);
-        this.length = PositiveIntegerType(length);
+        this.method = t.maybe(NonEmptyStringType)(method);
+        this.length = t.maybe(PositiveIntegerType)(length);
         this.iteration = t.maybe(PositiveIntegerType)(iteration);
     }
 }
 
 export class PairingTopics {
-    readonly c2d: string;
-    readonly d2c: string;
+    readonly c2d?: string;
+    readonly d2c?: string;
 
-    constructor(c2d: string, d2c: string) {
-        this.c2d = NonEmptyStringType(c2d);
-        this.d2c = NonEmptyStringType(d2c);
+    constructor(c2d?: string, d2c?: string) {
+        this.c2d = t.maybe(NonEmptyStringType)(c2d);
+        this.d2c = t.maybe(NonEmptyStringType)(d2c);
     }
 }
 
@@ -83,27 +83,27 @@ export class StateInitiate extends State {
 }
 
 export class StatePaired extends State {
-    readonly topics: PairingTopics;
+    readonly topics?: PairingTopics;
 
-    constructor(topics: PairingTopics) {
+    constructor(topics?: PairingTopics) {
         super(State.STATE.paired);
-        this.topics = new PairingTopics(topics.c2d, topics.d2c);
+        this.topics = topics ? new PairingTopics(topics.c2d, topics.d2c) : undefined;
     }
 
     update(previous: State): State {
         if (previous && previous.state === State.STATE.paired && (previous instanceof StatePaired)) {
-            return new StatePaired(
+            return new StatePaired(previous.topics ?
                 new PairingTopics(
                     this.topics.c2d ? this.topics.c2d : previous.topics.c2d,
                     this.topics.d2c ? this.topics.d2c : previous.topics.d2c
-                ));
+                ) : undefined);
         } else {
             return StatePaired.copy(this);
         }
     }
 
     static copy(statePaired: StatePaired): StatePaired {
-        return new StatePaired(new PairingTopics(statePaired.topics.c2d, statePaired.topics.d2c));
+        return new StatePaired(statePaired.topics ? new PairingTopics(statePaired.topics.c2d, statePaired.topics.d2c) : undefined);
     }
 }
 

@@ -37,7 +37,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             });
 
             if (!foundMethod) {
-                logger.error(`Pairing method ${this.selectedPairingMethod.methodName} is not registered with the pairing engine.`);
+                throw new Error(`Pairing method ${this.selectedPairingMethod.methodName} is not registered with the pairing engine.`);
             } else {
                 await foundMethod.cancelRetrievePattern();
             }
@@ -51,7 +51,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
             });
 
             if (!foundMethod) {
-                logger.error(`Pairing method ${state.config.method} is not registered with the pairing engine.`);
+                throw new Error(`Pairing method ${state.config.method} is not registered with the pairing engine.`);
             } else {
                 this.selectedPairingMethod = foundMethod;
 
@@ -67,10 +67,6 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
         } else {
             throw new Error('No pairing methods registered but pairing is requested.');
         }
-    }
-
-    private stateUnknown(state: State) {
-        throw new Error(`Shadow ask to set device in unknown state '${state.state}'`);
     }
 
     private stateFactory(pairing: Pairing): State | null {
@@ -99,12 +95,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                 return new StatePatternMismatch();
             case State.STATE.paired:
                 const topics = pairing['topics'];
-
-                if (topics == null) {
-                    throw new Error(`No topics provided in shadow.`);
-                }
-
-                return new StatePaired(new PairingTopics(topics.c2d, topics.d2c));
+                return new StatePaired(topics ? new PairingTopics(topics.c2d, topics.d2c) : undefined);
             default:
                 throw new Error(`Unknown state ${pairing.state} received`);
         }
@@ -112,11 +103,11 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
 
     private emitShadowUpdate(pairing: Pairing) {
         // Update shadow with differences
-        const reportBack: any = { ...pairing };
+        const reportBack: any = {...pairing};
 
-        if (this.previousPairing) {
+        if (this.previousPairing && pairing.state && this.previousPairing.state !== pairing.state) {
             Object.keys(this.previousPairing).forEach(key => {
-                if (!reportBack[key]) {
+                if (reportBack[key] == null) {
                     reportBack[key] = null;
                 }
             });
@@ -126,14 +117,20 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
     }
 
     updatePairingState(pairing: Pairing) {
-        const state = this.stateFactory(pairing);
+        this.emitShadowUpdate(pairing);
+
         const previousState = this.stateFactory(this.previousPairing);
+
+        // If shadow update does not contain any state, fetch is from previous state
+        if (!pairing.state && previousState) {
+            pairing.state = previousState.state;
+        }
+
+        const state = this.stateFactory(pairing);
 
         if (previousState) {
             logger.debug(`STATE: ${previousState.state} -> ${state.state}`);
         }
-
-        this.emitShadowUpdate(pairing);
 
         const localState = state.update(previousState);
 
@@ -150,6 +147,6 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
                 break;
         }
 
-        this.previousPairing = state;
+        this.previousPairing = localState;
     }
 }
