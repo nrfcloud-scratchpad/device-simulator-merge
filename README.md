@@ -4,6 +4,8 @@ Command line utility for simulating a device connecting to and pairing with [nRF
 
 ### Install
 
+This utility can be ran without running npm install.  
+
     npm i
 
 ### Device configuration

@@ -59,3 +59,7 @@ typings/
 
 dist
 authentificationDocuments
+
+src/**/*.js
+__tests__/**/*.js
+.idea

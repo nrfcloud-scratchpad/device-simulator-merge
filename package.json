@@ -1,9 +1,9 @@
 {
   "name": "nrfcloud-device-simulator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "paring simulator for nrfcloud-compatible devices",
-  "main": "dist/src/index.js",
-  "typings": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "precompile": "npm run clean",
     "clean": "rimraf dist/*",

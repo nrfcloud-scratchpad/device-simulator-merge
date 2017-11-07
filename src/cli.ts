@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 const program = require('commander');
-const {red} = require('colors');
+const { red } = require('colors');
 
 import { FileConfigurationStorage } from './ConfigurationStorage';
 import { PairingEngine } from './pairing/PairingEngine';
@@ -80,7 +80,8 @@ async function startSimulation(configFilename: string, firmwareNsrn: string, opt
     return firmware.main();
 }
 
-program.command('start <firmware>')
+program
+.command('start <firmware>')
 .option('-c, --config [config]', 'Configuration file containing credentials.')
 .option('-n, --nmea [nmea]', 'File containing NMEA sentences.')
 .action((cmd: any, env: any) => {
