@@ -170,7 +170,8 @@ class AWSIoTHostConnection extends events_1.EventEmitter {
     setTopics(c2d, d2c) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.c2d) {
-                throw new HostConnection_1.HostConnectionError(`Already subscribed to topic '${this.c2d}'. This can not be changed. Disconnect and subscribe again.`);
+                logger.info(`Already subscribed to topic '${this.c2d}'.`);
+                return;
             }
             this.c2d = c2d;
             this.d2c = d2c;

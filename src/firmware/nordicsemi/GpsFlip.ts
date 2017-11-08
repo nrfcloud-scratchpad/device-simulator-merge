@@ -42,14 +42,31 @@ export class GpsFlip implements IFirmware {
         }
     }
 
+    private sendOk(timestamp: number): void {
+        const timeStamp = new Date(timestamp).toISOString();
+        logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+
+        const message = <DemopackMessage>{
+            appId: 'GPS',
+            messageId: this.state.messages.sent,
+            messageType: 'OK',
+        };
+
+        this.state.messages.sent++;
+
+        this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
+            logger.error(`Error sending OK to nRF Cloud. Error is ${error.message}`);
+        });
+    }
+
     private sendGpsData(timestamp: number, data: string): void {
         const timeStamp = new Date(timestamp).toISOString();
+        logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
 
         const message = <DemopackMessage>{
             appId: 'GPS',
             messageId: this.state.messages.sent,
             messageType: 'DATA',
-            timeStamp,
             data
         };
 
@@ -140,7 +157,12 @@ export class GpsFlip implements IFirmware {
 
         this.hostConnection.on('message', (message: any) => {
             const demopackMessage = <DemopackMessage>Object.assign({}, message);
-            logger.info(`Received message ${demopackMessage.messageId}`);
+
+            if (demopackMessage.appId === 'GPS') {
+                this.sendOk(Date.now());
+            }
+
+            logger.info(`Received message '${JSON.stringify(demopackMessage)}'`);
         });
 
         this.sensors.get('gps').on('data', (timestamp: number, data) => {
