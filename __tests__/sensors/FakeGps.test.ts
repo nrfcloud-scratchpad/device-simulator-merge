@@ -21,7 +21,7 @@ describe('fake gps', () => {
         fakeGps.on('stopped', stoppedMock);
     });
 
-    it('shall be able to receive data from recorded nmea sentences', async () => {
+    it('shall be able to receive data from recorded nmea sentences', async done => {
         await fakeGps.start();
 
         await new Promise<void>(resolve => {
@@ -33,6 +33,6 @@ describe('fake gps', () => {
         expect(dataMock).toHaveBeenCalledTimes(2);
         expect(stoppedMock).toHaveBeenCalledTimes(1);
 
-        console.log('ASDF');
+        done();
     });
 });

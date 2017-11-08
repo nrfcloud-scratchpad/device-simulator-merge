@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import { OrderedMap } from 'immutable';
 
-export class FakeMovementSensor extends EventEmitter implements ISensor {
+export class FakeAccelerometer extends EventEmitter implements ISensor {
     private movementSensorRecording: string;
     private currentTimestamp: number;  // Milliseconds elapsed since 1 January 1970 00:00:00 UTC, with leap seconds ignored.
     private defaultSampleRate: number;
@@ -41,7 +41,7 @@ export class FakeMovementSensor extends EventEmitter implements ISensor {
 
             if (columns.length === 3) {
                 // 3-axis accelerometer data
-                this.samples = this.samples.set(this.currentTimestamp, FakeMovementSensor.parseSample(line));
+                this.samples = this.samples.set(this.currentTimestamp, FakeAccelerometer.parseSample(line));
                 this.currentTimestamp += this.defaultSampleRate;
             } else if (columns.length === 1) {
                 // Wait time
