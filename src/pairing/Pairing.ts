@@ -162,4 +162,3 @@ export class PairingStatus {
         this.pattern = PatternArrayType(pattern);
     }
 }
-

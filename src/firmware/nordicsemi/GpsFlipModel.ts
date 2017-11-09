@@ -9,7 +9,7 @@
  */
 export interface DemopackMessage {
   appId: ("GPS" | "FLIP");
-  messageType: ("START" | "STOP" | "INT" | "GET" | "STATUS" | "DATA" | "OK" | "EVENT");
+  messageType: ("HELLO" | "START" | "STOP" | "INT" | "GET" | "STATUS" | "DATA" | "OK" | "EVENT");
   /**
    * This number is incremented by one for each message transmitted
    */

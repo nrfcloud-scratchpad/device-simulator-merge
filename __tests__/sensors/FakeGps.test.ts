@@ -32,7 +32,5 @@ describe('fake gps', () => {
 
         expect(dataMock).toHaveBeenCalledTimes(2);
         expect(stoppedMock).toHaveBeenCalledTimes(1);
-
-        console.log('ASDF');
     });
 });
