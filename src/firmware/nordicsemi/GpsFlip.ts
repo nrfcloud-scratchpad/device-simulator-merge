@@ -9,13 +9,18 @@ import { Pairing } from '../../pairing/Pairing';
 
 let logger = require('winston');
 
+const GPS = 'GPS';
+const GPS_SEND_INTERVAL = 10;
+
 export class GpsFlip implements IFirmware {
-    config: ConfigurationData;
-    pairingEngine: IPairingEngine;
-    state: FirmwareState;
-    hostConnection: IHostConnection;
-    sensors: Map<string, ISensor>;
+    private config: ConfigurationData;
+    private pairingEngine: IPairingEngine;
+    private state: FirmwareState;
+    private hostConnection: IHostConnection;
+    private sensors: Map<string, ISensor>;
     private applicationStarted: boolean;
+    private lastGpsSend: number;
+
 
     constructor(
         config: ConfigurationData,
@@ -36,26 +41,27 @@ export class GpsFlip implements IFirmware {
         };
         this.sensors = sensors;
         this.applicationStarted = false;
+        this.lastGpsSend = 0;
 
         if (newLogger) {
             logger = newLogger;
         }
     }
 
-    private sendOk(timestamp: number): void {
+    private sendGeneric(appId: string, messageType: string, timestamp: number): void {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
 
         const message = <DemopackMessage>{
-            appId: 'GPS',
+            appId,
             messageId: this.state.messages.sent,
-            messageType: 'OK',
+            messageType: messageType,
         };
 
         this.state.messages.sent++;
 
         this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
-            logger.error(`Error sending OK to nRF Cloud. Error is ${error.message}`);
+            logger.error(`Error sending ${messageType} to nRF Cloud. Error is ${error.message}.`);
         });
     }
 
@@ -64,7 +70,7 @@ export class GpsFlip implements IFirmware {
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
 
         const message = <DemopackMessage>{
-            appId: 'GPS',
+            appId: GPS,
             messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
@@ -81,8 +87,8 @@ export class GpsFlip implements IFirmware {
         if (pairing.state === 'paired') {
             if (pairing.topics && pairing.topics.d2c) {
                 await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
-                await this.sensors.get('gps').start();
-                await this.sensors.get('acc').start();
+
+                await this.sendGeneric(GPS, 'HELLO', Date.now());
                 this.applicationStarted = true;
 
                 logger.info(`Pairing done, application started.`);
@@ -99,10 +105,6 @@ export class GpsFlip implements IFirmware {
 
         if (!this.sensors.get('gps')) {
             throw new FirmwareError('GPS sensor not provided. Required by GpsFlip.');
-        }
-
-        if (!this.sensors.get('acc')) {
-            throw new FirmwareError('Accelerometer sensor not provided. Required by GpsFlip.');
         }
 
         this.pairingEngine.on('pairingUpdate', (state, status) => {
@@ -135,13 +137,10 @@ export class GpsFlip implements IFirmware {
             }
         });
 
+        const gps = this.sensors.get('gps');
+
         this.hostConnection.on('reconnect', () => {
             logger.info('Reconnecting to nRF Cloud.');
-
-            if (this.applicationStarted) {
-                this.sensors.get('gps').start();
-                this.sensors.get('acc').start();
-            }
         });
 
         this.hostConnection.on('connect', () => {
@@ -150,23 +149,25 @@ export class GpsFlip implements IFirmware {
 
         this.hostConnection.on('disconnect', () => {
             logger.info('Disconnected from nRF Cloud.');
-
-            this.sensors.get('gps').stop();
-            this.sensors.get('acc').stop();
         });
 
         this.hostConnection.on('message', (message: any) => {
             const demopackMessage = <DemopackMessage>Object.assign({}, message);
 
-            if (demopackMessage.appId === 'GPS') {
-                this.sendOk(Date.now());
+            if (demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
+                this.applicationStarted && !gps.isStarted()) {
+                gps.start();
+                logger.info(`Received message ${JSON.stringify(demopackMessage)}`);
+            } else {
+                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
             }
-
-            logger.info(`Received message '${JSON.stringify(demopackMessage)}'`);
         });
 
-        this.sensors.get('gps').on('data', (timestamp: number, data) => {
-            this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
+        gps.on('data', (timestamp: number, data) => {
+            if (timestamp >= this.lastGpsSend + GPS_SEND_INTERVAL) {
+                this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
+                this.lastGpsSend = timestamp;
+            }
         });
 
         await this.hostConnection.connect();

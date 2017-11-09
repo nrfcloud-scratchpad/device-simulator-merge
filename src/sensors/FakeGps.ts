@@ -13,6 +13,8 @@ export class FakeGps extends EventEmitter implements ISensor {
     private readStream: fs.ReadStream;
     private nmeaTick: NodeJS.Timer;
 
+    private started: boolean;
+
     constructor(nmeaRecording: string, sentenceFilter: Array<string>) {
         super();
         this.nmeaRecording = nmeaRecording;
@@ -97,11 +99,14 @@ export class FakeGps extends EventEmitter implements ISensor {
             throw `NMEA recording with filename '${this.nmeaRecording}' does not exist.`;
         }
 
+        this.started = true;
+
         this.setupNmeaReader();
     }
 
     private cleanUp() {
         this.emit('stopped');
+        this.started = false;
 
         if (this.nmeaTick) {
             clearInterval(this.nmeaTick);
@@ -120,4 +125,9 @@ export class FakeGps extends EventEmitter implements ISensor {
         this.cleanUp();
         return;
     }
+
+    isStarted(): boolean {
+        return this.started;
+    }
+
 }

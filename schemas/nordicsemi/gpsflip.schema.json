@@ -18,6 +18,7 @@
         "messageType": {
             "type": "string",
             "enum": [
+                "HELLO",
                 "START",
                 "STOP",
                 "INT",

@@ -10,6 +10,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const Firmware_1 = require("../Firmware");
 let logger = require('winston');
+const GPS = 'GPS';
+const GPS_SEND_INTERVAL = 10;
 class GpsFlip {
     constructor(config, pairingEngine, hostConnection, sensors, newLogger) {
         this.config = config;
@@ -25,28 +27,29 @@ class GpsFlip {
         };
         this.sensors = sensors;
         this.applicationStarted = false;
+        this.lastGpsSend = 0;
         if (newLogger) {
             logger = newLogger;
         }
     }
-    sendOk(timestamp) {
+    sendGeneric(appId, messageType, timestamp) {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
         const message = {
-            appId: 'GPS',
+            appId,
             messageId: this.state.messages.sent,
-            messageType: 'OK',
+            messageType: messageType,
         };
         this.state.messages.sent++;
         this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
-            logger.error(`Error sending OK to nRF Cloud. Error is ${error.message}`);
+            logger.error(`Error sending ${messageType} to nRF Cloud. Error is ${error.message}.`);
         });
     }
     sendGpsData(timestamp, data) {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
         const message = {
-            appId: 'GPS',
+            appId: GPS,
             messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
@@ -61,8 +64,7 @@ class GpsFlip {
             if (pairing.state === 'paired') {
                 if (pairing.topics && pairing.topics.d2c) {
                     yield this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
-                    yield this.sensors.get('gps').start();
-                    yield this.sensors.get('acc').start();
+                    yield this.sendGeneric(GPS, 'HELLO', Date.now());
                     this.applicationStarted = true;
                     logger.info(`Pairing done, application started.`);
                 }
@@ -79,9 +81,6 @@ class GpsFlip {
             }
             if (!this.sensors.get('gps')) {
                 throw new Firmware_1.FirmwareError('GPS sensor not provided. Required by GpsFlip.');
-            }
-            if (!this.sensors.get('acc')) {
-                throw new Firmware_1.FirmwareError('Accelerometer sensor not provided. Required by GpsFlip.');
             }
             this.pairingEngine.on('pairingUpdate', (state, status) => {
                 logger.debug(`gpsFlip; updating shadow -> reported.pairing: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
@@ -109,30 +108,32 @@ class GpsFlip {
                     yield this.hostConnection.updateShadow(delta);
                 }
             }));
+            const gps = this.sensors.get('gps');
             this.hostConnection.on('reconnect', () => {
                 logger.info('Reconnecting to nRF Cloud.');
-                if (this.applicationStarted) {
-                    this.sensors.get('gps').start();
-                    this.sensors.get('acc').start();
-                }
             });
             this.hostConnection.on('connect', () => {
                 logger.info('Connected to nRF Cloud.');
             });
             this.hostConnection.on('disconnect', () => {
                 logger.info('Disconnected from nRF Cloud.');
-                this.sensors.get('gps').stop();
-                this.sensors.get('acc').stop();
             });
             this.hostConnection.on('message', (message) => {
                 const demopackMessage = Object.assign({}, message);
-                if (demopackMessage.appId === 'GPS') {
-                    this.sendOk(Date.now());
+                if (demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
+                    this.applicationStarted && !gps.isStarted()) {
+                    gps.start();
+                    logger.info(`Received message ${JSON.stringify(demopackMessage)}`);
                 }
-                logger.info(`Received message '${JSON.stringify(demopackMessage)}'`);
+                else {
+                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
+                }
             });
-            this.sensors.get('gps').on('data', (timestamp, data) => {
-                this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
+            gps.on('data', (timestamp, data) => {
+                if (timestamp >= this.lastGpsSend + GPS_SEND_INTERVAL) {
+                    this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
+                    this.lastGpsSend = timestamp;
+                }
             });
             yield this.hostConnection.connect();
             return new Promise(() => {

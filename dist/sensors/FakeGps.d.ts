@@ -9,10 +9,12 @@ export declare class FakeGps extends EventEmitter implements ISensor {
     private reader;
     private readStream;
     private nmeaTick;
+    private started;
     constructor(nmeaRecording: string, sentenceFilter: Array<string>);
     private setupNmeaReader();
     private nextNmeaTick();
     start(): Promise<void>;
     private cleanUp();
     stop(): Promise<void>;
+    isStarted(): boolean;
 }
