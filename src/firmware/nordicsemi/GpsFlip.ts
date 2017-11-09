@@ -10,7 +10,7 @@ import { Pairing } from '../../pairing/Pairing';
 let logger = require('winston');
 
 const GPS = 'GPS';
-const GPS_SEND_INTERVAL = 10;
+const GPS_SEND_INTERVAL = 10000;
 
 export class GpsFlip implements IFirmware {
     private config: ConfigurationData;
@@ -164,9 +164,9 @@ export class GpsFlip implements IFirmware {
         });
 
         gps.on('data', (timestamp: number, data) => {
-            if (timestamp >= this.lastGpsSend + GPS_SEND_INTERVAL) {
+            if (Date.now() >= this.lastGpsSend + GPS_SEND_INTERVAL) {
                 this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
-                this.lastGpsSend = timestamp;
+                this.lastGpsSend = Date.now();
             }
         });
 

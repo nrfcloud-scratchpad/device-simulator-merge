@@ -11,7 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Firmware_1 = require("../Firmware");
 let logger = require('winston');
 const GPS = 'GPS';
-const GPS_SEND_INTERVAL = 10;
+const GPS_SEND_INTERVAL = 10000;
 class GpsFlip {
     constructor(config, pairingEngine, hostConnection, sensors, newLogger) {
         this.config = config;
@@ -130,9 +130,9 @@ class GpsFlip {
                 }
             });
             gps.on('data', (timestamp, data) => {
-                if (timestamp >= this.lastGpsSend + GPS_SEND_INTERVAL) {
+                if (Date.now() >= this.lastGpsSend + GPS_SEND_INTERVAL) {
                     this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
-                    this.lastGpsSend = timestamp;
+                    this.lastGpsSend = Date.now();
                 }
             });
             yield this.hostConnection.connect();
