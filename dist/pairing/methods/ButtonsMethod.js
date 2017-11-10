@@ -17,7 +17,7 @@ class SwitchesMethod {
         }
         const pos = Math.floor(this.idx / 2);
         const prev = this.pattern.readUInt8(pos);
-        const value = (keyId << ((this.idx % 2) * 4)) + prev;
+        const value = keyId | (prev << ((this.idx % 2) * 4));
         // console.log(`keyId: ${keyId} pos: ${pos} prev: ${prev} value: ${value}`);
         this.pattern.writeUInt8(value, pos);
         this.idx++;
