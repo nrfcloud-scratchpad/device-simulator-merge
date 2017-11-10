@@ -189,7 +189,8 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
 
     async setTopics(c2d: string, d2c: string): Promise<void> {
         if (this.c2d) {
-            throw new HostConnectionError(`Already subscribed to topic '${this.c2d}'. This can not be changed. Disconnect and subscribe again.`);
+            logger.info(`Already subscribed to topic '${this.c2d}'.`);
+            return;
         }
 
         this.c2d = c2d;

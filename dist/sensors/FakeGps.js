@@ -78,11 +78,13 @@ class FakeGps extends events_1.EventEmitter {
             if (!fileExists) {
                 throw `NMEA recording with filename '${this.nmeaRecording}' does not exist.`;
             }
+            this.started = true;
             this.setupNmeaReader();
         });
     }
     cleanUp() {
         this.emit('stopped');
+        this.started = false;
         if (this.nmeaTick) {
             clearInterval(this.nmeaTick);
         }
@@ -96,6 +98,9 @@ class FakeGps extends events_1.EventEmitter {
     stop() {
         this.cleanUp();
         return;
+    }
+    isStarted() {
+        return this.started;
     }
 }
 exports.FakeGps = FakeGps;

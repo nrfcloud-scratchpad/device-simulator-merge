@@ -14,13 +14,18 @@ class DummySensor extends events_1.EventEmitter {
         super();
         this.dummyData = dummyData;
         this.interval = interval;
+        this.started = false;
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             this.tick = setInterval(() => {
                 this.emit('data', Date.now(), this.dummyData);
             }, this.interval);
+            this.started = true;
         });
+    }
+    isStarted() {
+        return this.started;
     }
     cleanUp() {
         if (this.tick) {
@@ -30,6 +35,7 @@ class DummySensor extends events_1.EventEmitter {
     stop() {
         return __awaiter(this, void 0, void 0, function* () {
             this.cleanUp();
+            this.started = false;
             return;
         });
     }
