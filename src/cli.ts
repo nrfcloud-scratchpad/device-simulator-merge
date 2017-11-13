@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 const program = require('commander');
-const { red } = require('colors');
+const {red} = require('colors');
 
 import { FileConfigurationStorage } from './ConfigurationStorage';
 import { PairingEngine } from './pairing/PairingEngine';
@@ -11,9 +11,9 @@ import { DummyMethod } from './pairing/methods/DummyMethod';
 import { FirmwareDirectory } from './firmware/FirmwareDirectory';
 import { ISensor } from './sensors/Sensor';
 import { FakeGps } from './sensors/FakeGps';
-import { DummySensor } from './sensors/DummySensor';
 import { AWSIoTHostConnection } from './connection/AWSIoTHostConnection';
 import { SwitchesMethod } from './pairing/methods/ButtonsMethod';
+import { FakeAccelerometer } from './sensors/FakeAccelerometer';
 
 let winston = require('winston');
 let ran = false;
@@ -64,7 +64,9 @@ async function startSimulation(configFilename: string, firmwareNsrn: string, opt
         sensors.set('gps', new FakeGps(options.nmea, ['GPGGA']));
     }
 
-    sensors.set('acc', new DummySensor(new Uint8Array([1, 2, 3, 4, 5]), 1000));
+    if (options && options.acc) {
+        sensors.set('acc', new FakeAccelerometer(options.acc));
+    }
 
     const firmwareDirectory = new FirmwareDirectory(
         config,
@@ -84,6 +86,7 @@ program
 .command('start <firmware>')
 .option('-c, --config [config]', 'Configuration file containing credentials.')
 .option('-n, --nmea [nmea]', 'File containing NMEA sentences.')
+.option('-a, --acc [acc]', 'File containing accelerometer recordings.')
 .action((cmd: any, env: any) => {
     ran = true;
 

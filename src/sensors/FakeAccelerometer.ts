@@ -2,30 +2,74 @@ import { EventEmitter } from 'events';
 import { ISensor } from './Sensor';
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { OrderedMap } from 'immutable';
+
+class WaitDuration {
+    private _duration: number;
+
+    constructor(duration: number) {
+        this._duration = duration;
+    }
+
+    get duration() {
+        return this._duration;
+    }
+}
+
+export class Sample {
+    private x: number;
+    private y: number;
+    private z: number;
+
+    constructor(x: number, y: number, z: number) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    get X() {
+        return this.x;
+    }
+
+    get Y() {
+        return this.y;
+    }
+
+    get Z() {
+        return this.z;
+    }
+
+    toArray(): Uint8Array {
+        return new Uint8Array([this.X, this.Y, this.Z]);
+    }
+
+    static fromArray(from: Uint8Array) {
+        return new Sample(from[0], from[1], from[2]);
+    }
+}
 
 export class FakeAccelerometer extends EventEmitter implements ISensor {
     private movementSensorRecording: string;
     private currentTimestamp: number;  // Milliseconds elapsed since 1 January 1970 00:00:00 UTC, with leap seconds ignored.
     private defaultSampleRate: number;
-    private previousTimestamp: number;
 
     private reader: readline.ReadLine;
     private readStream: fs.ReadStream;
-    private samples: OrderedMap<number, Array<number>>;
-    private doCleanup: boolean;
+    private samples: Set<Sample | WaitDuration>;
+    private doLoop: boolean;
+    private doRun: boolean;
 
-    constructor(flipRecording: string, defaultSampleRate: number = 100) {
+    constructor(flipRecording: string, doLoop: boolean = true, defaultSampleRate: number = 1000) {
         super();
         this.defaultSampleRate = defaultSampleRate;
         this.movementSensorRecording = flipRecording;
-        this.samples = OrderedMap<number, Array<number>>();
-        this.doCleanup = false;
+        this.samples = new Set<Sample | WaitDuration>();
+        this.doLoop = doLoop;
+        this.doRun = false;
     }
 
-    private static parseSample(sample: string): Array<number> {
+    private static parseSample(sample: string): Sample {
         const columns = sample.split(',');
-        return [parseInt(columns[0]), parseInt(columns[1]), parseInt(columns[2])];
+        return new Sample(parseInt(columns[0]), parseInt(columns[1]), parseInt(columns[2]));
     }
 
     private setupReader() {
@@ -41,72 +85,63 @@ export class FakeAccelerometer extends EventEmitter implements ISensor {
 
             if (columns.length === 3) {
                 // 3-axis accelerometer data
-                this.samples = this.samples.set(this.currentTimestamp, FakeAccelerometer.parseSample(line));
-                this.currentTimestamp += this.defaultSampleRate;
+                this.samples = this.samples.add(FakeAccelerometer.parseSample(line));
             } else if (columns.length === 1) {
                 // Wait time
-                this.samples = this.samples.set(this.currentTimestamp, []);
-                this.currentTimestamp += parseInt(columns[0]);
+                this.samples = this.samples.add(new WaitDuration(parseInt(columns[0])));
             } else {
                 console.log(`Unknown sample received: '${line}'.`);
             }
         });
 
         this.reader.on('close', () => {
-            this.cleanUp();
-        });
-
-        this.reader.on('end', () => {
-            this.cleanUp();
-        });
-
-        // Start ticking
-        this.nextTick();
-    }
-
-    private emitSample(timestamp: number, sample: Array<number>): void {
-        if (sample && sample.length === 3) {
-            this.emit('data', timestamp, new Uint8Array(Buffer.from(sample)));
-        }
-    }
-
-    private nextTick() {
-        // If no samples read yet, wait
-        if (!this.samples || this.samples.size === 0) {
-            if (this.doCleanup) {
-                this.emit('stopped');
-            } else {
-                setTimeout(() => this.nextTick(), this.defaultSampleRate);
-
+            if (this.reader) {
+                this.reader.close();
             }
 
-            return;
-        }
+            if (this.readStream) {
+                this.readStream.close();
+            }
 
-        const next = this.samples.keySeq().first();
-        const currentTimestamp = next;
-        const sample = this.samples.get(next);
+            // Start sending data
+            this.emitSamples();
+        });
+    }
 
-        // If no previous timestamp, fake one that is current - defaultSampleRate
-        if (!this.previousTimestamp) {
-            this.previousTimestamp = currentTimestamp - this.defaultSampleRate;
-        }
+    private async emitSamples(): Promise<void> {
+        do {
+            const it = this.samples.entries();
+            let done = false;
 
-        if (next) {
-            const nextEmit = currentTimestamp - this.previousTimestamp;
+            while (!done) {
+                const next = it.next();
 
-            setTimeout(() => {
-                this.emitSample(currentTimestamp, sample);
-                this.samples = this.samples.delete(currentTimestamp);
-                this.nextTick();
-            }, nextEmit);
+                if (!next.done && this.doRun) {
+                    const entry = next.value[0];
 
-            this.previousTimestamp = currentTimestamp;
-        }
+                    if (entry instanceof Sample) {
+                        this.emit('data', Date.now(), (<Sample>entry).toArray());
+
+                        await new Promise<void>(resolve => {
+                            setTimeout(() => resolve(), this.defaultSampleRate);
+                        });
+                    } else if (entry instanceof WaitDuration) {
+                        await new Promise<void>(resolve => {
+                            setTimeout(() => resolve(), (<WaitDuration>entry).duration);
+                        });
+                    }
+                } else {
+                    done = true;
+                }
+            }
+        } while (this.doRun && this.doLoop);
+
+        this.emit('stopped');
     }
 
     async start(): Promise<void> {
-        this.doCleanup = false;
+        this.doRun = true;
+
         const fileExists = await new Promise((resolve) => fs.exists(this.movementSensorRecording, resolve));
 
         if (!fileExists) {
@@ -116,20 +151,11 @@ export class FakeAccelerometer extends EventEmitter implements ISensor {
         this.setupReader();
     }
 
-    private cleanUp() {
-        this.doCleanup = true;
-
-        if (this.reader) {
-            this.reader.close();
-        }
-
-        if (this.readStream) {
-            this.readStream.close();
-        }
+    async stop(): Promise<void> {
+        this.doRun = false;
     }
 
-    stop(): Promise<void> {
-        this.cleanUp();
-        return;
+    isStarted(): boolean {
+        return this.doRun;
     }
 }

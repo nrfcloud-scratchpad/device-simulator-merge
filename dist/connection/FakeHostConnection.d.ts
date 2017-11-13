@@ -13,6 +13,7 @@ export declare class FakeHostConnection extends EventEmitter implements IHostCon
     constructor(onUpdateShadow?: OnUpdateShadow, onSendMessage?: OnSendMessage, newLogger?: any);
     connect(): Promise<void>;
     disconnect(): Promise<void>;
+    injectMessageToDevice(message: string): void;
     updateShadow(reported: ShadowModelReported): Promise<void>;
     sendMessage(message: string): Promise<void>;
     setTopics(c2d: string, d2c: string): Promise<void>;

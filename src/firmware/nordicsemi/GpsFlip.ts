@@ -6,11 +6,120 @@ import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../../Shad
 import { ISensor } from '../../sensors/Sensor';
 import { DemopackMessage } from './GpsFlipModel';
 import { Pairing } from '../../pairing/Pairing';
+import { Sample } from '../../sensors/FakeAccelerometer';
+
+//
+// Simulate behaviour of Alta device:
+//   https://projecttools.nordicsemi.no/jira/browse/IS-1130
+//
 
 let logger = require('winston');
 
 const GPS = 'GPS';
 const GPS_SEND_INTERVAL = 10000;
+
+const FLIP = 'FLIP';
+
+enum Orientation {
+    NORMAL,
+    UPSIDE_DOWN,
+    ON_SIDE
+}
+
+class Gps {
+    lastGpsSend: number;
+
+    constructor() {
+        this.lastGpsSend = 0;
+    }
+}
+
+const FLIP_RING_BUFFER_SIZE = 30;
+const FLIP_UPSIDE_DOWN_TRIGGER_DURATION = 5000; // Should be 5 seconds
+const FLIP_NORMAL_POSITION_DURATION = 5000; // Should be 5 seconds
+
+class Flip {
+    private currentOrientation: Orientation;
+    private lastOrientationChange: number;
+    private accRingBuffer: Array<Uint8Array>;
+    private accRingBufferPos: number;
+
+    constructor() {
+        this.currentOrientation = Orientation.NORMAL;
+        this.lastOrientationChange = 0;
+        this.accRingBuffer = new Array<Uint8Array>(FLIP_RING_BUFFER_SIZE);
+        this.accRingBufferPos = 0;
+    }
+
+    update(timestamp: number, sample: Sample) {
+        this.updateOrientation(timestamp, sample);
+        this.updateRingBuffer(sample);
+    }
+
+    private updateRingBuffer(sample: Sample) {
+        if (this.accRingBuffer.length > FLIP_RING_BUFFER_SIZE) {
+            this.accRingBuffer.shift();
+        }
+
+        this.accRingBuffer.push(sample.toArray());
+    }
+
+    private updateOrientation(timestamp: number, sample: Sample) {
+        const previousOrientation = this.currentOrientation;
+
+        switch (this.currentOrientation) {
+            case Orientation.NORMAL:
+                if (sample.Z < -40) {
+                    this.currentOrientation = Orientation.UPSIDE_DOWN;
+                }
+                else if (sample.Z < 40) {
+                    this.currentOrientation = Orientation.ON_SIDE;
+                }
+                break;
+            case Orientation.ON_SIDE:
+                if (sample.Z < -50) {
+                    this.currentOrientation = Orientation.UPSIDE_DOWN;
+                } else if (sample.Z > 50) {
+                    this.currentOrientation = Orientation.NORMAL;
+                }
+                break;
+            case Orientation.UPSIDE_DOWN:
+                if (sample.Z > 40) {
+                    this.currentOrientation = Orientation.NORMAL;
+                }
+                else if (sample.Z > -50) {
+                    this.currentOrientation = Orientation.ON_SIDE;
+                }
+                break;
+            default:
+                break;
+        }
+
+        if (previousOrientation !== this.currentOrientation) {
+            this.lastOrientationChange = timestamp;
+        }
+    }
+
+    isFlipped(timestamp: number): boolean {
+        return ((timestamp - this.lastOrientationChange) >= FLIP_UPSIDE_DOWN_TRIGGER_DURATION &&
+            this.currentOrientation === Orientation.UPSIDE_DOWN);
+    }
+
+    isInNormalPosition(timestamp: number): boolean {
+        return ((timestamp - this.lastOrientationChange) >= FLIP_NORMAL_POSITION_DURATION &&
+            this.currentOrientation === Orientation.NORMAL);
+    }
+
+    copyRingBuffer(): Array<Uint8Array> {
+        const dst = new Array<Uint8Array>(this.accRingBuffer.length);
+
+        this.accRingBuffer.forEach(element => {
+            dst.push(element);
+        });
+
+        return dst;
+    }
+}
 
 export class GpsFlip implements IFirmware {
     private config: ConfigurationData;
@@ -19,8 +128,9 @@ export class GpsFlip implements IFirmware {
     private hostConnection: IHostConnection;
     private sensors: Map<string, ISensor>;
     private applicationStarted: boolean;
-    private lastGpsSend: number;
-
+    private gps: Gps;
+    private flip: Flip;
+    private flipSent: boolean;
 
     constructor(
         config: ConfigurationData,
@@ -41,7 +151,6 @@ export class GpsFlip implements IFirmware {
         };
         this.sensors = sensors;
         this.applicationStarted = false;
-        this.lastGpsSend = 0;
 
         if (newLogger) {
             logger = newLogger;
@@ -79,7 +188,25 @@ export class GpsFlip implements IFirmware {
         this.state.messages.sent++;
 
         this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
-            logger.error(`Error sending GPS sensor data to nRF Cloud. Error is ${error.message}`);
+            logger.error(`Error sending GPS sensor data to nRF Cloud. Error is ${error.message}.`);
+        });
+    }
+
+    private sendFlipData(timestamp: number, data: any): void {
+        const timeStamp = new Date(timestamp).toISOString();
+        logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+
+        const message = <DemopackMessage>{
+            appId: FLIP,
+            messageId: this.state.messages.sent,
+            messageType: 'OK',
+            data
+        };
+
+        this.state.messages.sent++;
+
+        this.hostConnection.sendMessage(JSON.stringify(message)).catch(error => {
+            logger.error(`Error sending FLIP data to nRF Cloud. Error is ${error.message}.`);
         });
     }
 
@@ -88,9 +215,15 @@ export class GpsFlip implements IFirmware {
             if (pairing.topics && pairing.topics.d2c) {
                 await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
 
-                await this.sendGeneric(GPS, 'HELLO', Date.now());
-                this.applicationStarted = true;
+                if (this.gps) {
+                    await this.sendGeneric(GPS, 'HELLO', Date.now());
+                }
 
+                if (this.flip) {
+                    await this.sendGeneric(FLIP, 'HELLO', Date.now());
+                }
+
+                this.applicationStarted = true;
                 logger.info(`Pairing done, application started.`);
             } else {
                 logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
@@ -98,15 +231,7 @@ export class GpsFlip implements IFirmware {
         }
     }
 
-    async main(): Promise<number> {
-        if (!this.sensors) {
-            throw new FirmwareError('Sensors not provided. Required by GpsFlip.');
-        }
-
-        if (!this.sensors.get('gps')) {
-            throw new FirmwareError('GPS sensor not provided. Required by GpsFlip.');
-        }
-
+    private setupPairing() {
         this.pairingEngine.on('pairingUpdate', (state, status) => {
             logger.debug(`gpsFlip; updating shadow -> reported.pairing: ${JSON.stringify(state)} status: ${JSON.stringify(status)}`);
             this.hostConnection.updateShadow({
@@ -114,7 +239,6 @@ export class GpsFlip implements IFirmware {
                 pairingStatus: status,
             });
         });
-
         this.hostConnection.on('shadowGetAccepted', async (shadow: ShadowModel) => {
             this.pairingEngine.updatePairingState(shadow.desired.pairing);
 
@@ -122,7 +246,6 @@ export class GpsFlip implements IFirmware {
                 await this.startApplication(shadow.desired.pairing);
             }
         });
-
         this.hostConnection.on('shadowDelta', async (delta: ShadowModelDesired) => {
             if (delta.pairing) {
                 this.pairingEngine.updatePairingState(delta.pairing);
@@ -136,8 +259,14 @@ export class GpsFlip implements IFirmware {
                 await this.hostConnection.updateShadow(<ShadowModelReported>delta);
             }
         });
+    }
 
-        const gps = this.sensors.get('gps');
+    async main(): Promise<number> {
+        if (!this.sensors) {
+            throw new FirmwareError('Sensors not provided. Required by GpsFlip.');
+        }
+
+        this.setupPairing();
 
         this.hostConnection.on('reconnect', () => {
             logger.info('Reconnecting to nRF Cloud.');
@@ -151,24 +280,57 @@ export class GpsFlip implements IFirmware {
             logger.info('Disconnected from nRF Cloud.');
         });
 
+        const gps = this.sensors.get('gps');
+
+        if (gps) {
+            this.gps = new Gps();
+        }
+
+        const acc = this.sensors.get('acc');
+
+        if (acc) {
+            this.flip = new Flip();
+            this.flipSent = false;
+        }
+
         this.hostConnection.on('message', (message: any) => {
             const demopackMessage = <DemopackMessage>Object.assign({}, message);
 
-            if (demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
+            if (gps && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
                 this.applicationStarted && !gps.isStarted()) {
                 gps.start();
-                logger.info(`Received message ${JSON.stringify(demopackMessage)}`);
+                logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}`);
+            } else if (acc && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
+                this.applicationStarted && !acc.isStarted()) {
+                acc.start();
+                logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}`);
             } else {
                 logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
             }
         });
 
-        gps.on('data', (timestamp: number, data) => {
-            if (Date.now() >= this.lastGpsSend + GPS_SEND_INTERVAL) {
-                this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
-                this.lastGpsSend = Date.now();
-            }
-        });
+        if (gps) {
+            gps.on('data', (timestamp: number, data) => {
+                if (Date.now() >= this.gps.lastGpsSend + GPS_SEND_INTERVAL) {
+                    this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
+                    this.gps.lastGpsSend = Date.now();
+                }
+            });
+        }
+
+        if (acc) {
+            acc.on('data', (timestamp: number, data) => {
+                const sample = Sample.fromArray(data);
+                this.flip.update(timestamp, sample);
+
+                if (this.flip.isFlipped(timestamp) && !this.flipSent) {
+                    this.flipSent = true;
+                    this.sendFlipData(timestamp, this.flip.copyRingBuffer());
+                } else if (this.flip.isInNormalPosition(timestamp) && this.flipSent) {
+                    this.flipSent = false;
+                }
+            });
+        }
 
         await this.hostConnection.connect();
 

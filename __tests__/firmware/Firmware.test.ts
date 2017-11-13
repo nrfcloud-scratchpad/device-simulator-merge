@@ -4,14 +4,17 @@ import { DummyMethod } from '../../src/pairing/methods/DummyMethod';
 import { PairingEngine } from '../../src/pairing/PairingEngine';
 import { ISensor } from '../../src/sensors/Sensor';
 import { FakeGps } from '../../src/sensors/FakeGps';
-import { DummySensor } from '../../src/sensors/DummySensor';
 import { FirmwareDirectory } from '../../src/firmware/FirmwareDirectory';
 import { ConfigurationData, MemoryConfigurationStorage } from '../../src/ConfigurationStorage';
 import { ShadowModelReported } from '../../src/ShadowModel';
 import { SwitchesMethod } from '../../src/pairing/methods/ButtonsMethod';
+import { FakeAccelerometer } from '../../src/sensors/FakeAccelerometer';
 
 let logger = require('winston');
 let firmwareDirectory: FirmwareDirectory;
+
+const nmeaRecording = '__tests__/sensors/nmea-recording.txt';
+const accelerometerRecording = '__tests__/sensors/accelerometer-recording.txt';
 
 describe('firmware directory', () => {
     beforeEach(async () => {
@@ -22,12 +25,10 @@ describe('firmware directory', () => {
         const pairingEngine = new PairingEngine(pairingMethods);
 
         const onUpdateShadow: OnUpdateShadow = async (updateShadow: ShadowModelReported) => {
-            console.log('! onUpdateShadow');
             return;
         };
 
         const onSendMessage: OnSendMessage = async (message: string) => {
-            console.log(`! onSendMessage ${message}`);
             return;
         };
 
@@ -37,8 +38,8 @@ describe('firmware directory', () => {
             logger);
 
         const sensors: Map<string, ISensor> = new Map<string, ISensor>();
-        sensors.set('gps', new FakeGps('/tmp/output.txt', ['GPGGA']));
-        sensors.set('acc', new DummySensor(new Uint8Array([1, 2, 3, 4, 5]), 1000));
+        sensors.set('gps', new FakeGps(nmeaRecording, ['GPGGA']));
+        sensors.set('acc', new FakeAccelerometer(accelerometerRecording, false, 10));
 
         firmwareDirectory = new FirmwareDirectory(
             config,
@@ -55,11 +56,13 @@ describe('firmware directory', () => {
         const firmwareList = firmwareDirectory.getFirmwareList();
 
         expect(firmwareList).toBeDefined();
+
         expect(firmwareList.length).toBe(1);
         expect(firmwareList[0]).toBe('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0');
 
         const firmware = firmwareDirectory.getFirmware('nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0');
         expect(firmware).toBeDefined();
+
         firmware.main();
     });
 });

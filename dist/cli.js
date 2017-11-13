@@ -18,9 +18,9 @@ const PairingEngine_1 = require("./pairing/PairingEngine");
 const DummyMethod_1 = require("./pairing/methods/DummyMethod");
 const FirmwareDirectory_1 = require("./firmware/FirmwareDirectory");
 const FakeGps_1 = require("./sensors/FakeGps");
-const DummySensor_1 = require("./sensors/DummySensor");
 const AWSIoTHostConnection_1 = require("./connection/AWSIoTHostConnection");
 const ButtonsMethod_1 = require("./pairing/methods/ButtonsMethod");
+const FakeAccelerometer_1 = require("./sensors/FakeAccelerometer");
 let winston = require('winston');
 let ran = false;
 process.on('unhandledRejection', function (reason, p) {
@@ -57,7 +57,9 @@ function startSimulation(configFilename, firmwareNsrn, options) {
         if (options && options.nmea) {
             sensors.set('gps', new FakeGps_1.FakeGps(options.nmea, ['GPGGA']));
         }
-        sensors.set('acc', new DummySensor_1.DummySensor(new Uint8Array([1, 2, 3, 4, 5]), 1000));
+        if (options && options.acc) {
+            sensors.set('acc', new FakeAccelerometer_1.FakeAccelerometer(options.acc));
+        }
         const firmwareDirectory = new FirmwareDirectory_1.FirmwareDirectory(config, pairingEngine, hostConnection, sensors, logger);
         firmwareDirectory.create();
         const firmware = firmwareDirectory.getFirmware(firmwareNsrn);
@@ -68,6 +70,7 @@ program
     .command('start <firmware>')
     .option('-c, --config [config]', 'Configuration file containing credentials.')
     .option('-n, --nmea [nmea]', 'File containing NMEA sentences.')
+    .option('-a, --acc [acc]', 'File containing accelerometer recordings.')
     .action((cmd, env) => {
     ran = true;
     startSimulation(env['config'], cmd, {
