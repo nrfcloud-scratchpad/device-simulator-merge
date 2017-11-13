@@ -17,24 +17,21 @@ class SwitchesMethod {
         }
         const pos = Math.floor(this.idx / 2);
         const prev = this.pattern.readUInt8(pos);
-        const value = (keyId << ((this.idx % 2) * 4)) + prev;
-        // console.log(`keyId: ${keyId} pos: ${pos} prev: ${prev} value: ${value}`);
+        const value = keyId | (prev << ((this.idx % 2) * 4));
         this.pattern.writeUInt8(value, pos);
         this.idx++;
     }
     retrievePattern(patternLength) {
         this.patternLength = patternLength;
         console.log(`Press buttons 1-${this.numberOfButtons} ${this.patternLength} times.`);
-        return new Promise((resolve, reject) => {
-            this.rejectRetrievePattern = reject;
+        return new Promise(resolve => {
             readline.emitKeypressEvents(process.stdin);
             if (process.stdin.isTTY) {
                 process.stdin.setRawMode(true);
             }
             this.idx = 0;
             this.pattern = Buffer.alloc(this.patternLength / 2 + (this.patternLength % 2));
-            process.stdin.resume();
-            process.stdin.on('keypress', str => {
+            const keyPressListener = (str) => {
                 this.addKeypress(str);
                 if (this.idx >= this.patternLength) {
                     console.log(`Pattern recorded. Pattern is (hex): ${this.pattern.toString('hex')}`);
@@ -43,9 +40,12 @@ class SwitchesMethod {
                         process.stdin.setRawMode(false);
                     }
                     this.rejectRetrievePattern = null;
+                    process.stdin.removeAllListeners('keypress');
                     resolve(Array.prototype.slice.call(this.pattern, 0));
                 }
-            });
+            };
+            process.stdin.resume();
+            process.stdin.on('keypress', keyPressListener);
         });
     }
     cancelRetrievePattern() {
