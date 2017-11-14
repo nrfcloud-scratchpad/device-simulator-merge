@@ -1,0 +1,8 @@
+digraph {
+    NORMAL -> UPSIDE_DOWN [ label="z < -40" ]
+    NORMAL -> ON_SIDE [ label="z < 40" ]
+    ON_SIDE -> UPSIDE_DOWN [ label="z < -50" ]
+    ON_SIDE -> NORMAL [ label="z > 50" ]
+    UPSIDE_DOWN -> NORMAL [ label="z > 40" ]
+    UPSIDE_DOWN -> ON_SIDE [ label="z > -50" ]
+}

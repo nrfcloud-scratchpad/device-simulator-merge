@@ -32,6 +32,9 @@ class FakeHostConnection extends events_1.EventEmitter {
         this.emit('disconnect');
         return;
     }
+    injectMessageToDevice(message) {
+        this.emit('message', message);
+    }
     updateShadow(reported) {
         return __awaiter(this, void 0, void 0, function* () {
             logger.debug(`Fake: Updating shadow.reported on host '${JSON.stringify(reported)}'`);

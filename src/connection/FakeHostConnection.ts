@@ -10,8 +10,10 @@ export type OnSendMessage = (topic: string, message: string) => Promise<void>;
 
 export class FakeHostConnection extends EventEmitter implements IHostConnection {
     private reported: ShadowModelReported;
+
     private onUpdateShadow: OnUpdateShadow;
     private onSendMessage: OnSendMessage;
+
     private d2c: string;
     private c2d: string;
 
@@ -41,6 +43,10 @@ export class FakeHostConnection extends EventEmitter implements IHostConnection 
     disconnect(): Promise<void> {
         this.emit('disconnect');
         return;
+    }
+
+    injectMessageToDevice(message: string) {
+        this.emit('message', message);
     }
 
     async updateShadow(reported: ShadowModelReported): Promise<void> {
