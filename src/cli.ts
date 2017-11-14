@@ -65,7 +65,7 @@ async function startSimulation(configFilename: string, firmwareNsrn: string, opt
     }
 
     if (options && options.acc) {
-        sensors.set('acc', new FakeAccelerometer(options.acc));
+        sensors.set('acc', new FakeAccelerometer(options.acc, true, 1000));
     }
 
     const firmwareDirectory = new FirmwareDirectory(
@@ -89,9 +89,11 @@ program
 .option('-a, --acc [acc]', 'File containing accelerometer recordings.')
 .action((cmd: any, env: any) => {
     ran = true;
+    const { nmea, acc } = env;
 
     startSimulation(env['config'], cmd, {
-        nmea: env['nmea']
+        nmea,
+        acc
     }).then(retval => {
         console.log(`Simulator stopped with return value ${retval}.`);
     }).catch(error => {

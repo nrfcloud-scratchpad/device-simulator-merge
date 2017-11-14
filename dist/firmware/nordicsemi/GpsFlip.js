@@ -36,7 +36,7 @@ class Flip {
     constructor() {
         this.currentOrientation = Orientation.NORMAL;
         this.lastOrientationChange = 0;
-        this.accRingBuffer = new Array(FLIP_RING_BUFFER_SIZE);
+        this.accRingBuffer = new Array();
         this.accRingBufferPos = 0;
     }
     update(timestamp, sample) {
@@ -44,7 +44,7 @@ class Flip {
         this.updateRingBuffer(sample);
     }
     updateRingBuffer(sample) {
-        if (this.accRingBuffer.length > FLIP_RING_BUFFER_SIZE) {
+        if (this.accRingBuffer.length >= FLIP_RING_BUFFER_SIZE) {
             this.accRingBuffer.shift();
         }
         this.accRingBuffer.push(sample.toArray());
@@ -82,6 +82,7 @@ class Flip {
         if (previousOrientation !== this.currentOrientation) {
             this.lastOrientationChange = timestamp;
         }
+        logger.debug(`orientation: ${previousOrientation} -> ${this.currentOrientation} @${new Date(this.lastOrientationChange).toISOString()}: ${JSON.stringify(sample)}`);
     }
     isFlipped(timestamp) {
         return ((timestamp - this.lastOrientationChange) >= FLIP_UPSIDE_DOWN_TRIGGER_DURATION &&
@@ -92,7 +93,7 @@ class Flip {
             this.currentOrientation === Orientation.NORMAL);
     }
     copyRingBuffer() {
-        const dst = new Array(this.accRingBuffer.length);
+        const dst = new Array();
         this.accRingBuffer.forEach(element => {
             dst.push(element);
         });
@@ -207,6 +208,13 @@ class GpsFlip {
             }
         }));
     }
+    static convertToInt8(data) {
+        const dest = new Int8Array(data.length);
+        data.forEach((value, idx) => {
+            dest[idx] = value << 24 >> 24;
+        });
+        return dest;
+    }
     main() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.sensors) {
@@ -233,18 +241,18 @@ class GpsFlip {
             }
             this.hostConnection.on('message', (message) => {
                 const demopackMessage = Object.assign({}, message);
-                if (gps && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
-                    this.applicationStarted && !gps.isStarted()) {
+                if (gps != null && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
+                    this.applicationStarted === true && !gps.isStarted()) {
                     gps.start();
                     logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}`);
                 }
-                else if (acc && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
-                    this.applicationStarted && !acc.isStarted()) {
+                else if (acc != null && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
+                    this.applicationStarted === true && !acc.isStarted()) {
                     acc.start();
                     logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}`);
                 }
                 else {
-                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
+                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
                 }
             });
             if (gps) {
@@ -257,7 +265,7 @@ class GpsFlip {
             }
             if (acc) {
                 acc.on('data', (timestamp, data) => {
-                    const sample = FakeAccelerometer_1.Sample.fromArray(data);
+                    const sample = FakeAccelerometer_1.Sample.fromArray(GpsFlip.convertToInt8(data));
                     this.flip.update(timestamp, sample);
                     if (this.flip.isFlipped(timestamp) && !this.flipSent) {
                         this.flipSent = true;

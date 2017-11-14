@@ -23,11 +23,15 @@ If you have curl installed:
     
     curl -L -o /tmp/output.txt "https://drive.google.com/uc?export=download&id=0BxDUQnmvFeMNOXM1ZmFFNHZZU2s"
 
+### Accelerometer samples
+
+An accelerometer recording can be found here \_\_tests\_\_/sensors/accelerometer-recording.txt
+
 
 ### CLI Usage
 
-    node dist/cli.js start <device type to simulate> -c <configuration file from nrfcloud-cli> -n <file with GPS NMEA sentences>
+    node dist/cli.js start <device type to simulate> -c <configuration file from nrfcloud-cli> -n <file with GPS NMEA sentences> -a <file with accelerometer recording> 
     
 Example:
 
-    node dist/cli.js start nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0 -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt
+    node dist/cli.js start nsrn:devices:types/device/nordicsemi/nRF91/PCA10074/gpsFlipDemo/0 -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt -a __tests__/sensors/accelerometer-recording.txt

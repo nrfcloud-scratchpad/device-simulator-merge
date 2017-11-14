@@ -41,13 +41,13 @@ const FLIP_NORMAL_POSITION_DURATION = 5000; // Should be 5 seconds
 class Flip {
     private currentOrientation: Orientation;
     private lastOrientationChange: number;
-    private accRingBuffer: Array<Uint8Array>;
+    private accRingBuffer: Array<number[]>;
     private accRingBufferPos: number;
 
     constructor() {
         this.currentOrientation = Orientation.NORMAL;
         this.lastOrientationChange = 0;
-        this.accRingBuffer = new Array<Uint8Array>(FLIP_RING_BUFFER_SIZE);
+        this.accRingBuffer = new Array<number[]>();
         this.accRingBufferPos = 0;
     }
 
@@ -57,7 +57,7 @@ class Flip {
     }
 
     private updateRingBuffer(sample: Sample) {
-        if (this.accRingBuffer.length > FLIP_RING_BUFFER_SIZE) {
+        if (this.accRingBuffer.length >= FLIP_RING_BUFFER_SIZE) {
             this.accRingBuffer.shift();
         }
 
@@ -98,6 +98,8 @@ class Flip {
         if (previousOrientation !== this.currentOrientation) {
             this.lastOrientationChange = timestamp;
         }
+
+        logger.debug(`orientation: ${previousOrientation} -> ${this.currentOrientation} @${new Date(this.lastOrientationChange).toISOString()}: ${JSON.stringify(sample)}`);
     }
 
     isFlipped(timestamp: number): boolean {
@@ -110,8 +112,8 @@ class Flip {
             this.currentOrientation === Orientation.NORMAL);
     }
 
-    copyRingBuffer(): Array<Uint8Array> {
-        const dst = new Array<Uint8Array>(this.accRingBuffer.length);
+    copyRingBuffer(): Array<number[]> {
+        const dst = new Array<number[]>();
 
         this.accRingBuffer.forEach(element => {
             dst.push(element);
@@ -261,6 +263,16 @@ export class GpsFlip implements IFirmware {
         });
     }
 
+    private static convertToInt8(data: Uint8Array): Int8Array {
+        const dest = new Int8Array(data.length);
+
+        data.forEach((value, idx) => {
+            dest[idx] = value << 24 >> 24;
+        });
+
+        return dest;
+    }
+
     async main(): Promise<number> {
         if (!this.sensors) {
             throw new FirmwareError('Sensors not provided. Required by GpsFlip.');
@@ -296,16 +308,16 @@ export class GpsFlip implements IFirmware {
         this.hostConnection.on('message', (message: any) => {
             const demopackMessage = <DemopackMessage>Object.assign({}, message);
 
-            if (gps && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
-                this.applicationStarted && !gps.isStarted()) {
+            if (gps != null && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
+                this.applicationStarted === true && !gps.isStarted()) {
                 gps.start();
                 logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}`);
-            } else if (acc && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
-                this.applicationStarted && !acc.isStarted()) {
+            } else if (acc != null && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
+                this.applicationStarted === true && !acc.isStarted()) {
                 acc.start();
                 logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}`);
             } else {
-                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
+                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
             }
         });
 
@@ -320,9 +332,8 @@ export class GpsFlip implements IFirmware {
 
         if (acc) {
             acc.on('data', (timestamp: number, data) => {
-                const sample = Sample.fromArray(data);
+                const sample = Sample.fromArray(GpsFlip.convertToInt8(data));
                 this.flip.update(timestamp, sample);
-
                 if (this.flip.isFlipped(timestamp) && !this.flipSent) {
                     this.flipSent = true;
                     this.sendFlipData(timestamp, this.flip.copyRingBuffer());

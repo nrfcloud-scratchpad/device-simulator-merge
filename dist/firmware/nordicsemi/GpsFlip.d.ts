@@ -19,5 +19,6 @@ export declare class GpsFlip implements IFirmware {
     private sendFlipData(timestamp, data);
     private startApplication(pairing);
     private setupPairing();
+    private static convertToInt8(data);
     main(): Promise<number>;
 }

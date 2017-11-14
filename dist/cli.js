@@ -58,7 +58,7 @@ function startSimulation(configFilename, firmwareNsrn, options) {
             sensors.set('gps', new FakeGps_1.FakeGps(options.nmea, ['GPGGA']));
         }
         if (options && options.acc) {
-            sensors.set('acc', new FakeAccelerometer_1.FakeAccelerometer(options.acc));
+            sensors.set('acc', new FakeAccelerometer_1.FakeAccelerometer(options.acc, true, 1000));
         }
         const firmwareDirectory = new FirmwareDirectory_1.FirmwareDirectory(config, pairingEngine, hostConnection, sensors, logger);
         firmwareDirectory.create();
@@ -73,8 +73,10 @@ program
     .option('-a, --acc [acc]', 'File containing accelerometer recordings.')
     .action((cmd, env) => {
     ran = true;
+    const { nmea, acc } = env;
     startSimulation(env['config'], cmd, {
-        nmea: env['nmea']
+        nmea,
+        acc
     }).then(retval => {
         console.log(`Simulator stopped with return value ${retval}.`);
     }).catch(error => {

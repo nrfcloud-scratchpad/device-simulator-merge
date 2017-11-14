@@ -38,11 +38,11 @@ export class Sample {
         return this.z;
     }
 
-    toArray(): Uint8Array {
-        return new Uint8Array([this.X, this.Y, this.Z]);
+    toArray(): Array<number> {
+        return [this.X, this.Y, this.Z];
     }
 
-    static fromArray(from: Uint8Array) {
+    static fromArray(from: Int8Array) {
         return new Sample(from[0], from[1], from[2]);
     }
 }
