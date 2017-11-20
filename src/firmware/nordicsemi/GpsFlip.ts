@@ -23,7 +23,6 @@ const FLIP = 'FLIP';
 enum Orientation {
     NORMAL,
     UPSIDE_DOWN,
-    ON_SIDE
 }
 
 class Gps {
@@ -34,34 +33,30 @@ class Gps {
     }
 }
 
-const FLIP_RING_BUFFER_SIZE = 30;
-const FLIP_UPSIDE_DOWN_TRIGGER_DURATION = 5000; // Should be 5 seconds
-const FLIP_NORMAL_POSITION_DURATION = 5000; // Should be 5 seconds
-
 class Flip {
     private currentOrientation: Orientation;
     private lastOrientationChange: number;
-    private accRingBuffer: Array<number[]>;
-    private accRingBufferPos: number;
+    private orientationChange: boolean;
 
     constructor() {
         this.currentOrientation = Orientation.NORMAL;
         this.lastOrientationChange = 0;
-        this.accRingBuffer = new Array<number[]>();
-        this.accRingBufferPos = 0;
     }
 
     update(timestamp: number, sample: Sample) {
         this.updateOrientation(timestamp, sample);
-        this.updateRingBuffer(sample);
     }
 
-    private updateRingBuffer(sample: Sample) {
-        if (this.accRingBuffer.length >= FLIP_RING_BUFFER_SIZE) {
-            this.accRingBuffer.shift();
+    get orientation(): string {
+        switch (this.currentOrientation) {
+            case Orientation.NORMAL:
+                return 'NORMAL';
+            case Orientation.UPSIDE_DOWN:
+                return 'UPSIDE_DOWN';
+            default:
+                logger.error(`Unknown orientation`);
+                return '';
         }
-
-        this.accRingBuffer.push(sample.toArray());
     }
 
     private updateOrientation(timestamp: number, sample: Sample) {
@@ -72,23 +67,10 @@ class Flip {
                 if (sample.Z < -40) {
                     this.currentOrientation = Orientation.UPSIDE_DOWN;
                 }
-                else if (sample.Z < 40) {
-                    this.currentOrientation = Orientation.ON_SIDE;
-                }
-                break;
-            case Orientation.ON_SIDE:
-                if (sample.Z < -50) {
-                    this.currentOrientation = Orientation.UPSIDE_DOWN;
-                } else if (sample.Z > 50) {
-                    this.currentOrientation = Orientation.NORMAL;
-                }
                 break;
             case Orientation.UPSIDE_DOWN:
                 if (sample.Z > 40) {
                     this.currentOrientation = Orientation.NORMAL;
-                }
-                else if (sample.Z > -50) {
-                    this.currentOrientation = Orientation.ON_SIDE;
                 }
                 break;
             default:
@@ -97,29 +79,16 @@ class Flip {
 
         if (previousOrientation !== this.currentOrientation) {
             this.lastOrientationChange = timestamp;
+            this.orientationChange = true;
         }
 
         logger.debug(`orientation: ${previousOrientation} -> ${this.currentOrientation} @${new Date(this.lastOrientationChange).toISOString()}: ${JSON.stringify(sample)}`);
     }
 
-    isFlipped(timestamp: number): boolean {
-        return ((timestamp - this.lastOrientationChange) >= FLIP_UPSIDE_DOWN_TRIGGER_DURATION &&
-            this.currentOrientation === Orientation.UPSIDE_DOWN);
-    }
-
-    isInNormalPosition(timestamp: number): boolean {
-        return ((timestamp - this.lastOrientationChange) >= FLIP_NORMAL_POSITION_DURATION &&
-            this.currentOrientation === Orientation.NORMAL);
-    }
-
-    copyRingBuffer(): Array<number[]> {
-        const dst = new Array<number[]>();
-
-        this.accRingBuffer.forEach(element => {
-            dst.push(element);
-        });
-
-        return dst;
+    isChanged(): boolean {
+        const retval = this.orientationChange;
+        this.orientationChange = false;
+        return retval;
     }
 }
 
@@ -132,7 +101,6 @@ export class GpsFlip implements IFirmware {
     private applicationStarted: boolean;
     private gps: Gps;
     private flip: Flip;
-    private flipSent: boolean;
 
     constructor(
         config: ConfigurationData,
@@ -302,7 +270,6 @@ export class GpsFlip implements IFirmware {
 
         if (acc) {
             this.flip = new Flip();
-            this.flipSent = false;
         }
 
         this.hostConnection.on('message', (message: any) => {
@@ -334,11 +301,8 @@ export class GpsFlip implements IFirmware {
             acc.on('data', (timestamp: number, data) => {
                 const sample = Sample.fromArray(GpsFlip.convertToInt8(data));
                 this.flip.update(timestamp, sample);
-                if (this.flip.isFlipped(timestamp) && !this.flipSent) {
-                    this.flipSent = true;
-                    this.sendFlipData(timestamp, this.flip.copyRingBuffer());
-                } else if (this.flip.isInNormalPosition(timestamp) && this.flipSent) {
-                    this.flipSent = false;
+                if (this.flip.isChanged()) {
+                    this.sendFlipData(timestamp, this.flip.orientation);
                 }
             });
         }
