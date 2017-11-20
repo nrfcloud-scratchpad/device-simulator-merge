@@ -127,7 +127,7 @@ class GpsFlip {
         const message = {
             appId: FLIP,
             messageId: this.state.messages.sent,
-            messageType: 'OK',
+            messageType: 'DATA',
             data
         };
         this.state.messages.sent++;

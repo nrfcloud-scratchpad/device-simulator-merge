@@ -169,7 +169,7 @@ export class GpsFlip implements IFirmware {
         const message = <DemopackMessage>{
             appId: FLIP,
             messageId: this.state.messages.sent,
-            messageType: 'OK',
+            messageType: 'DATA',
             data
         };
 
