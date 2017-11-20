@@ -12,7 +12,6 @@ export declare class GpsFlip implements IFirmware {
     private applicationStarted;
     private gps;
     private flip;
-    private flipSent;
     constructor(config: ConfigurationData, pairingEngine: IPairingEngine, hostConnection: IHostConnection, sensors: Map<string, ISensor>, newLogger?: any);
     private sendGeneric(appId, messageType, timestamp);
     private sendGpsData(timestamp, data);
