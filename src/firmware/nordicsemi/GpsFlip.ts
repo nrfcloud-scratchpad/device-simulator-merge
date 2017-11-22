@@ -27,9 +27,16 @@ enum Orientation {
 
 class Gps {
     lastGpsSend: number;
+    gps: ISensor;
 
-    constructor() {
+    constructor(gps: ISensor) {
         this.lastGpsSend = 0;
+        this.gps = gps;
+    }
+
+
+    get sensor(): ISensor {
+        return this.gps;
     }
 }
 
@@ -37,10 +44,16 @@ class Flip {
     private currentOrientation: Orientation;
     private lastOrientationChange: number;
     private orientationChange: boolean;
+    private acc: ISensor;
 
-    constructor() {
+    constructor(acc: ISensor) {
         this.currentOrientation = Orientation.NORMAL;
         this.lastOrientationChange = 0;
+        this.acc = acc;
+    }
+
+    get sensor(): ISensor {
+        return this.acc;
     }
 
     update(timestamp: number, sample: Sample) {
@@ -130,10 +143,10 @@ export class GpsFlip implements IFirmware {
     private sendGeneric(appId: string, messageType: string, timestamp: number): void {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
 
         const message = <DemopackMessage>{
             appId,
-            messageId: this.state.messages.sent,
             messageType: messageType,
         };
 
@@ -147,10 +160,10 @@ export class GpsFlip implements IFirmware {
     private sendGpsData(timestamp: number, data: string): void {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
 
         const message = <DemopackMessage>{
             appId: GPS,
-            messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
         };
@@ -165,10 +178,10 @@ export class GpsFlip implements IFirmware {
     private sendFlipData(timestamp: number, data: any): void {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
 
         const message = <DemopackMessage>{
             appId: FLIP,
-            messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
         };
@@ -184,16 +197,23 @@ export class GpsFlip implements IFirmware {
         if (pairing.state === 'paired') {
             if (pairing.topics && pairing.topics.d2c) {
                 await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
+                this.applicationStarted = true;
 
                 if (this.gps) {
                     await this.sendGeneric(GPS, 'HELLO', Date.now());
+
+                    if (!this.gps.sensor.isStarted()) {
+                        await this.gps.sensor.start();
+                    }
                 }
 
                 if (this.flip) {
                     await this.sendGeneric(FLIP, 'HELLO', Date.now());
+                    if (!this.flip.sensor.isStarted()) {
+                        await this.flip.sensor.start();
+                    }
                 }
 
-                this.applicationStarted = true;
                 logger.info(`Pairing done, application started.`);
             } else {
                 logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
@@ -263,32 +283,8 @@ export class GpsFlip implements IFirmware {
         const gps = this.sensors.get('gps');
 
         if (gps) {
-            this.gps = new Gps();
-        }
+            this.gps = new Gps(gps);
 
-        const acc = this.sensors.get('acc');
-
-        if (acc) {
-            this.flip = new Flip();
-        }
-
-        this.hostConnection.on('message', (message: any) => {
-            const demopackMessage = <DemopackMessage>Object.assign({}, message);
-
-            if (gps != null && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
-                this.applicationStarted === true && !gps.isStarted()) {
-                gps.start();
-                logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}`);
-            } else if (acc != null && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
-                this.applicationStarted === true && !acc.isStarted()) {
-                acc.start();
-                logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}`);
-            } else {
-                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
-            }
-        });
-
-        if (gps) {
             gps.on('data', (timestamp: number, data) => {
                 if (Date.now() >= this.gps.lastGpsSend + GPS_SEND_INTERVAL) {
                     this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
@@ -297,7 +293,11 @@ export class GpsFlip implements IFirmware {
             });
         }
 
+        const acc = this.sensors.get('acc');
+
         if (acc) {
+            this.flip = new Flip(acc);
+
             acc.on('data', (timestamp: number, data) => {
                 const sample = Sample.fromArray(GpsFlip.convertToInt8(data));
                 this.flip.update(timestamp, sample);
@@ -306,6 +306,18 @@ export class GpsFlip implements IFirmware {
                 }
             });
         }
+
+        this.hostConnection.on('message', (message: any) => {
+            const demopackMessage = <DemopackMessage>Object.assign({}, message);
+
+            if (demopackMessage.appId === GPS) {
+                logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}. Discarding it.`);
+            } else if (demopackMessage.appId === FLIP) {
+                logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}. Discarding it.`);
+            } else {
+                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
+            }
+        });
 
         await this.hostConnection.connect();
 
