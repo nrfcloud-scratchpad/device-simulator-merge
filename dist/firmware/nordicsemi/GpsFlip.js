@@ -24,14 +24,22 @@ var Orientation;
     Orientation[Orientation["UPSIDE_DOWN"] = 1] = "UPSIDE_DOWN";
 })(Orientation || (Orientation = {}));
 class Gps {
-    constructor() {
+    constructor(gps) {
         this.lastGpsSend = 0;
+        this.gps = gps;
+    }
+    get sensor() {
+        return this.gps;
     }
 }
 class Flip {
-    constructor() {
+    constructor(acc) {
         this.currentOrientation = Orientation.NORMAL;
         this.lastOrientationChange = 0;
+        this.acc = acc;
+    }
+    get sensor() {
+        return this.acc;
     }
     update(timestamp, sample) {
         this.updateOrientation(timestamp, sample);
@@ -89,7 +97,6 @@ class GpsFlip {
             },
         };
         this.sensors = sensors;
-        this.applicationStarted = false;
         if (newLogger) {
             logger = newLogger;
         }
@@ -97,9 +104,9 @@ class GpsFlip {
     sendGeneric(appId, messageType, timestamp) {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
         const message = {
             appId,
-            messageId: this.state.messages.sent,
             messageType: messageType,
         };
         this.state.messages.sent++;
@@ -110,9 +117,9 @@ class GpsFlip {
     sendGpsData(timestamp, data) {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
         const message = {
             appId: GPS,
-            messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
         };
@@ -124,9 +131,9 @@ class GpsFlip {
     sendFlipData(timestamp, data) {
         const timeStamp = new Date(timestamp).toISOString();
         logger.debug(`Timestamp in message #${this.state.messages.sent}, ${timeStamp} removed from message, since firmware implementation does not support it yet.`);
+        logger.debug(`messageId not sent in message since firmware implementation does not have it.`);
         const message = {
             appId: FLIP,
-            messageId: this.state.messages.sent,
             messageType: 'DATA',
             data
         };
@@ -142,9 +149,15 @@ class GpsFlip {
                     yield this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
                     if (this.gps) {
                         yield this.sendGeneric(GPS, 'HELLO', Date.now());
+                        if (!this.gps.sensor.isStarted()) {
+                            yield this.gps.sensor.start();
+                        }
                     }
                     if (this.flip) {
                         yield this.sendGeneric(FLIP, 'HELLO', Date.now());
+                        if (!this.flip.sensor.isStarted()) {
+                            yield this.flip.sensor.start();
+                        }
                     }
                     this.applicationStarted = true;
                     logger.info(`Pairing done, application started.`);
@@ -152,6 +165,19 @@ class GpsFlip {
                 else {
                     logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
                 }
+            }
+        });
+    }
+    stopApplication() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.applicationStarted) {
+                if (this.gps) {
+                    yield this.gps.sensor.stop();
+                }
+                if (this.flip) {
+                    yield this.flip.sensor.stop();
+                }
+                this.applicationStarted = false;
             }
         });
     }
@@ -174,6 +200,9 @@ class GpsFlip {
                 this.pairingEngine.updatePairingState(delta.pairing);
                 if (delta.pairing.state === 'paired') {
                     yield this.startApplication(delta.pairing);
+                }
+                else if (delta.pairing.state !== 'paired' && this.applicationStarted) {
+                    yield this.stopApplication();
                 }
             }
             else {
@@ -207,29 +236,7 @@ class GpsFlip {
             });
             const gps = this.sensors.get('gps');
             if (gps) {
-                this.gps = new Gps();
-            }
-            const acc = this.sensors.get('acc');
-            if (acc) {
-                this.flip = new Flip();
-            }
-            this.hostConnection.on('message', (message) => {
-                const demopackMessage = Object.assign({}, message);
-                if (gps != null && demopackMessage.appId === GPS && demopackMessage.messageType === 'OK' &&
-                    this.applicationStarted === true && !gps.isStarted()) {
-                    gps.start();
-                    logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}`);
-                }
-                else if (acc != null && demopackMessage.appId === FLIP && demopackMessage.messageType === 'OK' &&
-                    this.applicationStarted === true && !acc.isStarted()) {
-                    acc.start();
-                    logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}`);
-                }
-                else {
-                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
-                }
-            });
-            if (gps) {
+                this.gps = new Gps(gps);
                 gps.on('data', (timestamp, data) => {
                     if (Date.now() >= this.gps.lastGpsSend + GPS_SEND_INTERVAL) {
                         this.sendGpsData(timestamp, String.fromCharCode.apply(null, data));
@@ -237,7 +244,9 @@ class GpsFlip {
                     }
                 });
             }
+            const acc = this.sensors.get('acc');
             if (acc) {
+                this.flip = new Flip(acc);
                 acc.on('data', (timestamp, data) => {
                     const sample = FakeAccelerometer_1.Sample.fromArray(GpsFlip.convertToInt8(data));
                     this.flip.update(timestamp, sample);
@@ -246,6 +255,18 @@ class GpsFlip {
                     }
                 });
             }
+            this.hostConnection.on('message', (message) => {
+                const demopackMessage = Object.assign({}, message);
+                if (demopackMessage.appId === GPS) {
+                    logger.info(`Received GPS message ${JSON.stringify(demopackMessage)}. Discarding it.`);
+                }
+                else if (demopackMessage.appId === FLIP) {
+                    logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}. Discarding it.`);
+                }
+                else {
+                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
+                }
+            });
             yield this.hostConnection.connect();
             return new Promise(() => {
             });

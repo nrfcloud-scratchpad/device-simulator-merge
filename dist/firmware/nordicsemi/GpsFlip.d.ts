@@ -8,8 +8,8 @@ export declare class GpsFlip implements IFirmware {
     private pairingEngine;
     private state;
     private hostConnection;
-    private sensors;
     private applicationStarted;
+    private sensors;
     private gps;
     private flip;
     constructor(config: ConfigurationData, pairingEngine: IPairingEngine, hostConnection: IHostConnection, sensors: Map<string, ISensor>, newLogger?: any);
@@ -17,6 +17,7 @@ export declare class GpsFlip implements IFirmware {
     private sendGpsData(timestamp, data);
     private sendFlipData(timestamp, data);
     private startApplication(pairing);
+    private stopApplication();
     private setupPairing();
     private static convertToInt8(data);
     main(): Promise<number>;
