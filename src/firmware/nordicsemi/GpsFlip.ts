@@ -110,8 +110,8 @@ export class GpsFlip implements IFirmware {
     private pairingEngine: IPairingEngine;
     private state: FirmwareState;
     private hostConnection: IHostConnection;
-    private sensors: Map<string, ISensor>;
     private applicationStarted: boolean;
+    private sensors: Map<string, ISensor>;
     private gps: Gps;
     private flip: Flip;
 
@@ -133,7 +133,6 @@ export class GpsFlip implements IFirmware {
             },
         };
         this.sensors = sensors;
-        this.applicationStarted = false;
 
         if (newLogger) {
             logger = newLogger;
@@ -197,7 +196,6 @@ export class GpsFlip implements IFirmware {
         if (pairing.state === 'paired') {
             if (pairing.topics && pairing.topics.d2c) {
                 await this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
-                this.applicationStarted = true;
 
                 if (this.gps) {
                     await this.sendGeneric(GPS, 'HELLO', Date.now());
@@ -214,10 +212,26 @@ export class GpsFlip implements IFirmware {
                     }
                 }
 
+                this.applicationStarted = true;
                 logger.info(`Pairing done, application started.`);
             } else {
                 logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
             }
+        }
+    }
+
+    private async stopApplication(): Promise<void> {
+        if (this.applicationStarted) {
+
+            if (this.gps) {
+                await this.gps.sensor.stop();
+            }
+
+            if (this.flip) {
+                await this.flip.sensor.stop();
+            }
+
+            this.applicationStarted = false;
         }
     }
 
@@ -229,6 +243,7 @@ export class GpsFlip implements IFirmware {
                 pairingStatus: status,
             });
         });
+
         this.hostConnection.on('shadowGetAccepted', async (shadow: ShadowModel) => {
             this.pairingEngine.updatePairingState(shadow.desired.pairing);
 
@@ -236,12 +251,15 @@ export class GpsFlip implements IFirmware {
                 await this.startApplication(shadow.desired.pairing);
             }
         });
+
         this.hostConnection.on('shadowDelta', async (delta: ShadowModelDesired) => {
             if (delta.pairing) {
                 this.pairingEngine.updatePairingState(delta.pairing);
 
                 if (delta.pairing.state === 'paired') {
                     await this.startApplication(delta.pairing);
+                } else if (delta.pairing.state !== 'paired' && this.applicationStarted) {
+                    await this.stopApplication();
                 }
             } else {
                 // Some application specific state is desired, reply back as reported and process afterwards
@@ -315,7 +333,7 @@ export class GpsFlip implements IFirmware {
             } else if (demopackMessage.appId === FLIP) {
                 logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}. Discarding it.`);
             } else {
-                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
+                logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
             }
         });
 

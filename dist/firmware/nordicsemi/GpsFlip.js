@@ -97,7 +97,6 @@ class GpsFlip {
             },
         };
         this.sensors = sensors;
-        this.applicationStarted = false;
         if (newLogger) {
             logger = newLogger;
         }
@@ -148,7 +147,6 @@ class GpsFlip {
             if (pairing.state === 'paired') {
                 if (pairing.topics && pairing.topics.d2c) {
                     yield this.hostConnection.setTopics(pairing.topics.c2d, pairing.topics.d2c);
-                    this.applicationStarted = true;
                     if (this.gps) {
                         yield this.sendGeneric(GPS, 'HELLO', Date.now());
                         if (!this.gps.sensor.isStarted()) {
@@ -161,11 +159,25 @@ class GpsFlip {
                             yield this.flip.sensor.start();
                         }
                     }
+                    this.applicationStarted = true;
                     logger.info(`Pairing done, application started.`);
                 }
                 else {
                     logger.warn('Paired but application topics are NOT provided by nRF Cloud.');
                 }
+            }
+        });
+    }
+    stopApplication() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.applicationStarted) {
+                if (this.gps) {
+                    yield this.gps.sensor.stop();
+                }
+                if (this.flip) {
+                    yield this.flip.sensor.stop();
+                }
+                this.applicationStarted = false;
             }
         });
     }
@@ -188,6 +200,9 @@ class GpsFlip {
                 this.pairingEngine.updatePairingState(delta.pairing);
                 if (delta.pairing.state === 'paired') {
                     yield this.startApplication(delta.pairing);
+                }
+                else if (delta.pairing.state !== 'paired' && this.applicationStarted) {
+                    yield this.stopApplication();
                 }
             }
             else {
@@ -249,7 +264,7 @@ class GpsFlip {
                     logger.info(`Received FLIP message ${JSON.stringify(demopackMessage)}. Discarding it.`);
                 }
                 else {
-                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}, applicationStarted: ${this.applicationStarted}`);
+                    logger.info(`Received message (ignoring it) ${JSON.stringify(demopackMessage)}`);
                 }
             });
             yield this.hostConnection.connect();
