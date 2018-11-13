@@ -53,8 +53,6 @@ program
     .option('-t, --temp <temp>', 'File containing temperature recordings.')
     .parse(process.argv);
 
-startSimulation(program).then(retval => {
-    console.log(`Simulator stopped with return value ${retval}.`);
-}).catch(error => {
+startSimulation(program).catch(error => {
     process.stderr.write(`${red(error)}\n`);
 });
