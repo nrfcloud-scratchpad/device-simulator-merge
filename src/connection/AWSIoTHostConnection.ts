@@ -1,18 +1,18 @@
 import { EventEmitter } from 'events';
 import { HostConnectionError, IHostConnection } from './HostConnection';
-import { ConfigurationData } from '../ConfigurationStorage';
+import { Configuration } from '../Configuration';
 import { ShadowModel, ShadowModelDesired, ShadowModelReported } from '../ShadowModel';
 
-import * as awsIot from 'aws-iot-device-sdk';
+import { device, DeviceOptions } from 'aws-iot-device-sdk';
 
 export class AWSIoTHostConnection extends EventEmitter implements IHostConnection {
-    private config: ConfigurationData;
-    private mqtt?: awsIot.device;
+    private config: Configuration;
+    private mqtt?: device;
     private d2c?: string;
     private c2d?: string;
     private deltaEnabled: boolean;
 
-    constructor(config: ConfigurationData) {
+    constructor(config: Configuration) {
         super();
 
         this.config = config;
@@ -43,10 +43,8 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
     }
 
     connect(): Promise<void> {
-        console.debug(`Connecting to nRF Cloud stage ${this.config.stage}`);
-
         return new Promise<void>((resolveConnect, rejectConnect) => {
-            const connectOptions: any = {
+            const connectOptions: DeviceOptions = {
                 privateKey: Buffer.from(this.config.privateKey, 'utf8'),
                 clientCert: Buffer.from(this.config.clientCert, 'utf8'),
                 caCert: Buffer.from(this.config.caCert, 'utf8'),
@@ -57,7 +55,7 @@ export class AWSIoTHostConnection extends EventEmitter implements IHostConnectio
             };
 
             try {
-                this.mqtt = new awsIot.device(connectOptions);
+                this.mqtt = new device(connectOptions);
 
                 const shadowBaseTopic = this.getShadowBaseTopic();
 
