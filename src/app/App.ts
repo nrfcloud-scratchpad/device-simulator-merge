@@ -8,7 +8,7 @@ import {
 import { ISensor } from '../sensors/Sensor';
 import { AppMessage } from './AppModel';
 import { Pairing } from '../pairing/Pairing';
-import Service from './services/Service';
+import { Service } from './services/Service';
 import { createService } from './services/createService';
 
 export type SendMessage = (timestamp: number, message: AppMessage) => void;

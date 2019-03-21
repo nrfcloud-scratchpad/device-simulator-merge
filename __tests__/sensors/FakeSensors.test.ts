@@ -1,4 +1,4 @@
-import FakeThermometer from '../../src/sensors/FakeThermometer';
+import { FakeThermometer } from '../../src/sensors/FakeThermometer';
 import { FakeGps } from '../../src/sensors/FakeGps';
 import { ISensor } from '../../src/sensors/Sensor';
 import { FakeAccelerometer } from '../../src/sensors/FakeAccelerometer';

@@ -14,7 +14,7 @@ export class Temp implements Service {
   async start() {
     await this.sendHello();
 
-    this.sensor.on('data', (timestamp: number, data) => {
+    this.sensor.on('data', (timestamp: number, data: any) => {
       const message = <AppMessage>{
         appId: APPID,
         messageType: 'DATA',
