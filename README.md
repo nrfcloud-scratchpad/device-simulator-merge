@@ -15,7 +15,7 @@ Command line utility for simulating a device connecting to and pairing with [nRF
     mkdir simulator
     cd simulator
     npm init -y
-    npm i --save @nrfcloud/device simulator
+    npm i --save @nrfcloud/device-simulator
 
 ### Usage
 
