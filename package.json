@@ -1,37 +1,43 @@
 {
-  "name": "nrfcloud-device-simulator",
-  "version": "1.0.1",
-  "description": "paring simulator for nrfcloud-compatible devices",
+  "name": "@nrfcloud/device-simulator",
+  "version": "0.0.0-development",
+  "description": "simulates nRF Connect for Cloud devices",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "bin": "dist/cli.js",
   "scripts": {
-    "precompile": "npm run clean && npm run schemas2ts",
-    "clean": "rimraf dist/*",
+    "precompile": "npm run schemas2ts",
     "build": "npm run lint && npm run compile",
     "compile": "npm run compile:ts",
     "compile:ts": "tsc",
-    "lint": "tslint --project ./tsconfig.json",
+    "lint": "npm run tslint && npm run prettier:lint",
+    "tslint": "tslint --project ./tsconfig.json",
+    "prettier": "prettier --write \"./src/**/*.ts\"",
+    "prettier:lint": "prettier --list-different \"./src/**/*.ts\"",
     "test": "jest",
     "schemas2ts": "json2ts schemas/app.schema.json src/app/AppModel.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NordicPlayground/nrfcloud-device-simulator.git"
+    "url": "git+https://github.com/nRFCloud/device-simulator.git"
   },
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/NordicPlayground/nrfcloud-device-simulator/issues"
+    "url": "https://github.com/nRFCloud/device-simulator/issues"
   },
-  "homepage": "https://github.com/NordicPlayground/nrfcloud-device-simulator#readme",
+  "homepage": "https://github.com/nRFCloud/device-simulator#readme",
   "devDependencies": {
+    "@commitlint/cli": "^7.5.2",
+    "@commitlint/config-angular": "^7.5.0",
+    "@nrfcloud/tslint-config": "^3.8.0",
     "@types/aws-iot-device-sdk": "^2.1.1",
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.3",
+    "husky": "^1.3.1",
     "jest": "^23.6.0",
     "json-schema-to-typescript": "^6.0.1",
-    "pem": "^1.13.2",
-    "rimraf": "^2.6.2",
+    "prettier": "^1.16.4",
     "ts-jest": "^23.10.4",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6"
@@ -41,7 +47,6 @@
     "aws-sdk": "^2.352.0",
     "colors": "^1.3.2",
     "commander": "^2.19.0",
-    "dotenv": "^6.1.0",
     "tcomb": "^3.2.28"
   },
   "jest": {
@@ -52,6 +57,27 @@
     ]
   },
   "engines": {
-    "node": ">=6.10.2"
+    "node": ">=8.0.0",
+    "npm": ">=6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "release": {
+    "branch": "saga",
+    "remoteTags": true
+  },
+  "files": [
+    "package-lock.json",
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -e",
+      "pre-commit": "npm run lint"
+    }
   }
 }

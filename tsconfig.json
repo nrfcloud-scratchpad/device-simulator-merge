@@ -1,19 +1,13 @@
 {
-    "compileOnSave": true,
     "compilerOptions": {
         "module": "commonjs",
-        "moduleResolution": "node",
-        "declaration": true,
-        "target": "es2015",
-        "sourceMap": true,
-        "emitDecoratorMetadata": false,
+        "target": "es2017",
+        "strict": true,
         "outDir": "dist/",
+        "declaration": true,
+        "skipLibCheck": true,
         "noUnusedParameters": true,
-        "noUnusedLocals": true,
-        "lib": [
-            "es6"
-        ],
-        "strict": true
+        "noUnusedLocals": true
     },
     "include": [
         "src/**/*"
