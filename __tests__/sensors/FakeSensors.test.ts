@@ -5,27 +5,39 @@ import { FakeAccelerometer } from '../../src/sensors/FakeAccelerometer';
 
 jest.setTimeout(15000);
 
-const testFakeSensor = (sensorName: string, sensor: ISensor, expectedDataEvents: number) => {
-    describe(sensorName, () => {
-        it('shall be able to receive data from recording', async (done) => {
-            const dataEvent = jest.fn();
-            sensor.on('data', dataEvent);
+const testFakeSensor = (
+  sensorName: string,
+  sensor: ISensor,
+  expectedDataEvents: number,
+) => {
+  describe(sensorName, () => {
+    it('shall be able to receive data from recording', async done => {
+      const dataEvent = jest.fn();
+      sensor.on('data', dataEvent);
 
-            sensor.on('stopped', () => {
-                expect(dataEvent).toHaveBeenCalledTimes(expectedDataEvents);
-                done();
-            });
+      sensor.on('stopped', () => {
+        expect(dataEvent).toHaveBeenCalledTimes(expectedDataEvents);
+        done();
+      });
 
-            await sensor.start();
-        });
+      await sensor.start();
     });
+  });
 };
 
 const thermometerRecording = '__tests__/sensors/thermometer-recording.txt';
-testFakeSensor('fake thermometer', new FakeThermometer(thermometerRecording, false, 10), 13);
+testFakeSensor(
+  'fake thermometer',
+  new FakeThermometer(thermometerRecording, false, 10),
+  13,
+);
 
 const nmeaRecording = '__tests__/sensors/nmea-recording.txt';
 testFakeSensor('fake gps', new FakeGps(nmeaRecording, ['GPGGA']), 2);
 
 const accelerometerRecording = '__tests__/sensors/accelerometer-recording.txt';
-testFakeSensor('fake accelerometer', new FakeAccelerometer(accelerometerRecording, false, 10), 277);
+testFakeSensor(
+  'fake accelerometer',
+  new FakeAccelerometer(accelerometerRecording, false, 10),
+  277,
+);

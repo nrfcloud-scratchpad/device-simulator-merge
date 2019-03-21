@@ -12,8 +12,8 @@
     "compile:ts": "tsc",
     "lint": "npm run tslint && npm run prettier:lint",
     "tslint": "tslint --project ./tsconfig.json",
-    "prettier": "prettier --write \"./src/**/*.ts\"",
-    "prettier:lint": "prettier --list-different \"./src/**/*.ts\"",
+    "prettier": "prettier --write \"./**/*.ts\"",
+    "prettier:lint": "prettier --list-different \"./**/*.ts\"",
     "pretest": "npm run compile",
     "test": "jest",
     "schemas2ts": "json2ts schemas/app.schema.json src/app/AppModel.ts"
