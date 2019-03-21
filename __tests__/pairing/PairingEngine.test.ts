@@ -34,6 +34,13 @@ describe('device user association', () => {
             state: 'initiate'
         });
 
+        expect(pairingUpdateMock).toHaveBeenCalledWith(
+          <Pairing>{
+            state: 'initiate'
+          },
+          null
+        )
+
         // Engine shall report back with state above (#1)
 
         // STATE: pattern_wait
@@ -45,10 +52,29 @@ describe('device user association', () => {
             }
         });
 
+        expect(pairingUpdateMock).toHaveBeenCalledWith(
+          <Pairing>{
+            config: <PairingConfig>{
+              method: 'dummy',
+              length: 6
+            },
+            state: 'pattern_wait',
+          },
+          null
+        )
+
         await wait();
 
         // Engine shall report back with state above (#2)
         // Engine shall report back with status from pairing input (#3)
+
+        expect(pairingUpdateMock).toHaveBeenCalledWith(
+          null,
+          <PairingStatus>{
+            method: 'dummy',
+            pattern: [1, 2, 3, 4, 5, 6]
+          }
+        )
 
         // STATE: paired
 
@@ -61,6 +87,18 @@ describe('device user association', () => {
             }
         });
 
+        expect(pairingUpdateMock).toHaveBeenCalledWith(
+          <Pairing>{
+            state: 'paired',
+            config: null,
+            topics: <PairingTopics>{
+              c2d: '-aaa',
+              d2c: '-bbb'
+            }
+          },
+          null
+        )
+
         // Engine shall report back with state above
 
         // Expect pairingUpdate callbacks
@@ -68,41 +106,6 @@ describe('device user association', () => {
 
         // Expect paired callbacks
         expect(pairedMock.mock.calls.length).toBe(1);
-
-        // Callback #1
-        expect(pairingUpdateMock.mock.calls[0][0]).toEqual(<Pairing>{
-            state: 'initiate'
-        });
-        expect(pairingUpdateMock.mock.calls[0][1]).toBeNull();
-
-        // Callback #2
-        expect(pairingUpdateMock.mock.calls[1][0]).toEqual(<Pairing>{
-            config: <PairingConfig>{
-                method: 'dummy',
-                length: 6
-            },
-            state: 'pattern_wait',
-        });
-
-        expect(pairingUpdateMock.mock.calls[1][1]).toBeNull();
-
-        // Callback #3
-        expect(pairingUpdateMock.mock.calls[2][0]).toBeNull();
-        expect(pairingUpdateMock.mock.calls[2][1]).toEqual(<PairingStatus>{
-            method: 'dummy',
-            pattern: [1, 2, 3, 4, 5, 6]
-        });
-
-        // Callback #4
-        expect(pairingUpdateMock.mock.calls[3][0]).toEqual(<Pairing>{
-            state: 'paired',
-            config: null,
-            topics: <PairingTopics>{
-                c2d: '-aaa',
-                d2c: '-bbb'
-            }
-        });
-        expect(pairingUpdateMock.mock.calls[3][1]).toBeNull();
 
         done();
     });
@@ -340,6 +343,7 @@ describe('device user association', () => {
         expect(pairingUpdateMock.mock.calls[4][1]).toBeNull();
 
         // Callback #5
+        // FIXME: actually testing Callback #2
         expect(pairingUpdateMock.mock.calls[2][1]).toEqual(
             <PairingStatus>{
                 method: 'dummy',
@@ -348,9 +352,8 @@ describe('device user association', () => {
         );
 
         // Callback #6
-        expect(pairingUpdateMock.mock.calls[6][0]).toEqual(<Pairing>{
+        expect(pairingUpdateMock.mock.calls[6][0]).toMatchObject(<Pairing>{
             state: 'paired',
-            config: null,
             topics: <PairingTopics>{
                 c2d: 'c2d--',
                 d2c: '--d2c'
