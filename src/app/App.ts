@@ -19,7 +19,8 @@ export default class App {
     constructor(
         pairingEngine: IPairingEngine,
         hostConnection: IHostConnection,
-        sensors: Map<string, ISensor>) {
+        sensors: Map<string, ISensor>
+    ) {
         this.pairingEngine = pairingEngine;
         this.hostConnection = hostConnection;
         this.applicationStarted = false;

@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const APPID = 'TEMP';
+const APPID = 'DEVICE';
 class default_1 {
     constructor(sensor, sendMessage) {
         this.sensor = sensor;
@@ -16,11 +16,10 @@ class default_1 {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendHello();
             this.sensor.on('data', (timestamp, data) => {
                 const message = {
                     appId: APPID,
-                    messageType: 'DATA',
+                    messageType: 'STATUS',
                     // @ts-ignore
                     data: String.fromCharCode.apply(null, data)
                 };
@@ -31,14 +30,6 @@ class default_1 {
             }
         });
     }
-    sendHello() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sendMessage(Date.now(), {
-                appId: APPID,
-                messageType: 'HELLO',
-            });
-        });
-    }
     stop() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.sensor.stop();
@@ -46,4 +37,4 @@ class default_1 {
     }
 }
 exports.default = default_1;
-//# sourceMappingURL=Temp.js.map
+//# sourceMappingURL=Device.js.map

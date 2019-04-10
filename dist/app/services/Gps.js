@@ -24,6 +24,7 @@ class default_1 {
                     const message = {
                         appId: APPID,
                         messageType: 'DATA',
+                        // @ts-ignore
                         data: String.fromCharCode.apply(null, data)
                     };
                     this.sendMessage(timestamp, message);

@@ -19,6 +19,7 @@ export default class implements Service {
                 const message = <AppMessage>{
                     appId: APPID,
                     messageType: 'DATA',
+                    // @ts-ignore
                     data: String.fromCharCode.apply(null, data)
                 };
                 this.sendMessage(timestamp, message);

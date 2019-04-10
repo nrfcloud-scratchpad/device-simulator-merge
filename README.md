@@ -35,8 +35,8 @@ A thermometer recording can be found here \_\_tests\_\_/sensors/thermometer-reco
 
 ### CLI Usage
 
-    node dist/cli.js -c <configuration file from nrfcloud-cli> -n <file with GPS NMEA sentences> -a <file with accelerometer recording> -t <file with thermometer recording>
+    node dist/cli.js -c <configuration file from nrfcloud-cli> -n <file with GPS NMEA sentences> -a <file with accelerometer recording> -t <file with thermometer recording> -d <file with device info>
     
 Example:
 
-    node dist/cli.js -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt -a __tests__/sensors/accelerometer-recording.txt -t __tests__/sensors/thermometer-recording.txt
+    node dist/cli.js -c /home/kere/.nrfcloud/config.json -n /tmp/nmea-recording.txt -a __tests__/sensors/accelerometer-recording.txt -t __tests__/sensors/thermometer-recording.txt -d __tests__/sensors/device-info-recording.txt

@@ -3,18 +3,16 @@ import { AppMessage } from '../AppModel';
 import { SendMessage } from '../App';
 import Service from './Service';
 
-const APPID = 'TEMP';
+const APPID = 'DEVICE';
 
 export default class implements Service {
     constructor(private readonly sensor: ISensor, private readonly sendMessage: SendMessage) { }
 
     async start() {
-        await this.sendHello();
-
         this.sensor.on('data', (timestamp: number, data) => {
             const message = <AppMessage>{
                 appId: APPID,
-                messageType: 'DATA',
+                messageType: 'STATUS',
                 // @ts-ignore
                 data: String.fromCharCode.apply(null, data)
             };
@@ -24,13 +22,6 @@ export default class implements Service {
         if (!this.sensor.isStarted()) {
             await this.sensor.start();
         }
-    }
-
-    private async sendHello() {
-        await this.sendMessage(Date.now(), {
-            appId: APPID,
-            messageType: 'HELLO',
-        });
     }
 
     async stop() {

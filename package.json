@@ -11,6 +11,7 @@
     "compile": "npm run compile:ts",
     "compile:ts": "tsc",
     "lint": "tslint --project ./tsconfig.json",
+    "lintfix": "tslint --project ./tsconfig.json --fix",
     "test": "jest",
     "schemas2ts": "json2ts schemas/app.schema.json src/app/AppModel.ts"
   },
