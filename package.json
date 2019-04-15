@@ -6,19 +6,18 @@
   "typings": "dist/index.d.ts",
   "bin": "dist/cli.js",
   "scripts": {
-    "precompile": "npm run schemas2ts",
-    "build": "npm run lint && npm run compile",
-    "compile": "npm run compile:ts",
-    "compile:ts": "tsc",
-
-    "lintfix": "tslint --project ./tsconfig.json --fix",
-    "lint": "npm run tslint && npm run prettier:lint",
-    "tslint": "tslint --project ./tsconfig.json",
+	"build": "npm run lint && npm run compile",
+	"compile": "npm run compile:ts",
+	"compile:ts": "tsc",  
+	"lint": "npm run tslint && npm run prettier:lint",
+	"lintfix": "tslint --project ./tsconfig.json --fix",
+	"precompile": "npm run schemas2ts",
+	"pretest": "npm run compile",
     "prettier": "prettier --write \"./**/*.ts\"",
     "prettier:lint": "prettier --list-different \"./**/*.ts\"",
-    "pretest": "npm run compile",
+    "schemas2ts": "json2ts schemas/app.schema.json src/app/AppModel.ts",
     "test": "jest",
-    "schemas2ts": "json2ts schemas/app.schema.json src/app/AppModel.ts"
+    "tslint": "tslint --project ./tsconfig.json"
   },
   "repository": {
     "type": "git",
