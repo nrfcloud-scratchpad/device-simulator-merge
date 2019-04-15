@@ -23,7 +23,7 @@ export class FakeDevice extends EventEmitter implements ISensor {
       this.samples.push(line);
     });
 
-    reader.on('close', () => {
+    reader.on('close', async () => {
       if (reader) {
         reader.close();
       }
