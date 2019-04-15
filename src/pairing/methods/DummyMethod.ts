@@ -1,17 +1,17 @@
 import { IPairingMethod } from '../Pairing';
 
 export class DummyMethod implements IPairingMethod {
-    methodName: string;
-    dummyPattern: Array<number>;
+  methodName: string;
+  dummyPattern: Array<number>;
 
-    async retrievePattern(): Promise<Array<number>> {
-        return this.dummyPattern;
-    }
+  async retrievePattern(): Promise<Array<number>> {
+    return this.dummyPattern;
+  }
 
-    cancelRetrievePattern() { }
+  cancelRetrievePattern() {}
 
-    constructor(dummyPattern: Array<number>) {
-        this.methodName = 'dummy';
-        this.dummyPattern = dummyPattern;
-    }
+  constructor(dummyPattern: Array<number>) {
+    this.methodName = 'dummy';
+    this.dummyPattern = dummyPattern;
+  }
 }

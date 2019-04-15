@@ -4,124 +4,98 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 
 export class FakeGps extends EventEmitter implements ISensor {
-    private readonly nmeaSeconds: any = {};
-    private currentNmeaSecond?: number;
+  private readonly nmeaSentences: string[] = [];
+  private sentenceIndex: number = 0;
+  private reader?: readline.ReadLine;
+  private readStream?: fs.ReadStream;
+  private started = false;
+  private gpsEmitterIntervalId: any = null;
 
-    private reader?: readline.ReadLine;
-    private readStream?: fs.ReadStream;
-    private nmeaTick?: NodeJS.Timer;
+  constructor(
+    private readonly nmeaRecording: string,
+    private readonly sentenceFilter: Array<string>,
+    private readonly loop: boolean = false,
+  ) {
+    super();
+  }
 
-    private started = false;
+  private readGPSData() {
+    this.readStream = fs.createReadStream(this.nmeaRecording);
+    this.reader = readline.createInterface({
+      input: this.readStream,
+    });
 
-    constructor(private readonly nmeaRecording: string, private readonly sentenceFilter: Array<string>) {
-        super();
+    this.reader.on('line', line => {
+      const matchesFilter = this.sentenceFilter.some((sentence: string) => {
+        return line.startsWith(`\$${sentence}`);
+      });
+      if (matchesFilter) {
+        this.nmeaSentences.push(line);
+      }
+    });
+
+    this.reader.on('close', () => {
+      this.cleanUpAndStartEmitting();
+    });
+  }
+
+  private emitGPSData() {
+    this.emit(
+      'data',
+      Date.now(),
+      new Uint8Array(Buffer.from(this.nmeaSentences[this.sentenceIndex])),
+    );
+
+    if (this.sentenceIndex === this.nmeaSentences.length - 1) {
+      if (this.loop) {
+        this.sentenceIndex = 0;
+      } else {
+        this.stop();
+      }
+    } else {
+      this.sentenceIndex++;
+    }
+  }
+
+  async start(): Promise<void> {
+    const fileExists = await new Promise(resolve =>
+      fs.exists(this.nmeaRecording, resolve),
+    );
+
+    if (!fileExists) {
+      throw new Error(
+        `NMEA recording with filename '${this.nmeaRecording}' does not exist.`,
+      );
     }
 
-    private setupNmeaReader() {
-        this.readStream = fs.createReadStream(this.nmeaRecording);
-        this.reader = readline.createInterface({
-            input: this.readStream
-        });
+    this.started = true;
 
-        this.reader.on('line', line => {
-            if (line.split(',')[0] === '$GPGGA') {
-                // If we already have data pause readline
-                if (this.currentNmeaSecond) {
-                    this.reader!.pause();
-                }
+    this.readGPSData();
+  }
 
-                this.currentNmeaSecond = Date.now();
-                this.nmeaSeconds[this.currentNmeaSecond] = [];
-            }
-
-            if (!this.currentNmeaSecond) {
-                return;
-            }
-
-            let addEntry = true;
-
-            if (this.sentenceFilter) {
-                addEntry = this.sentenceFilter.some((sentence: string) => {
-                    return line.startsWith(`\$${sentence}`);
-                });
-            }
-
-            if (addEntry) {
-                this.nmeaSeconds[this.currentNmeaSecond].push(line);
-            }
-        });
-
-        this.reader.on('close', () => {
-            this.cleanUp();
-        });
-
-        this.reader.on('end', () => {
-            this.cleanUp();
-        });
-
-        // TODO: setup error handling/file end
-        this.nmeaTick = setInterval(() => {
-            this.nextNmeaTick();
-        }, 1000);
+  private cleanUpAndStartEmitting() {
+    if (this.reader) {
+      this.reader.close();
     }
 
-    private nextNmeaTick() {
-        if (this.reader && this.readStream && this.readStream.isPaused()) {
-            this.reader.resume();
-        }
-
-        if (!this.nmeaSeconds) {
-            return;
-        }
-
-        const next = Object.keys(this.nmeaSeconds)[0];
-
-        if (next) {
-            const sentences = this.nmeaSeconds[next];
-
-            sentences.forEach((sentence: string) => {
-                this.emit('data', parseInt(next), new Uint8Array(Buffer.from(sentence)));
-            });
-
-            delete this.nmeaSeconds[next];
-        }
+    if (this.readStream) {
+      this.readStream.close();
     }
 
-    async start(): Promise<void> {
-        const fileExists = await new Promise((resolve) => fs.exists(this.nmeaRecording, resolve));
-
-        if (!fileExists) {
-            throw `NMEA recording with filename '${this.nmeaRecording}' does not exist.`;
-        }
-
-        this.started = true;
-
-        this.setupNmeaReader();
+    if (this.nmeaSentences) {
+      this.gpsEmitterIntervalId = setInterval(() => {
+        this.emitGPSData();
+      }, 1000);
     }
+  }
 
-    private cleanUp() {
-        this.emit('stopped');
-        this.started = false;
+  stop() {
+    clearInterval(this.gpsEmitterIntervalId);
+    this.started = false;
+    this.emit('stopped');
+  }
 
-        if (this.nmeaTick) {
-            clearInterval(this.nmeaTick);
-        }
-
-        if (this.reader) {
-            this.reader.close();
-        }
-
-        if (this.readStream) {
-            this.readStream.close();
-        }
-    }
-
-    stop() {
-        this.cleanUp();
-    }
-
-    isStarted(): boolean {
-        return this.started;
-    }
-
+  isStarted(): boolean {
+    return this.started;
+  }
 }
