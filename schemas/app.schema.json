@@ -13,8 +13,8 @@
             "enum": [
                 "GPS",
                 "FLIP",
-				"TEMP",
-				"DEVICE"
+                "TEMP",
+                "DEVICE"
             ]
         },
         "messageType": {
