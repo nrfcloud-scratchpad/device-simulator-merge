@@ -9,7 +9,7 @@
  * Message format for simulator app
  */
 export interface AppMessage {
-  appId: 'GPS' | 'FLIP' | 'TEMP';
+  appId: 'GPS' | 'FLIP' | 'TEMP' | 'DEVICE';
   messageType:
     | 'HELLO'
     | 'START'

@@ -18,12 +18,12 @@ Command line utility for simulating a device connecting to and pairing with [nRF
     npm i --save @nrfcloud/device-simulator
 
 ### Usage
-
     npx @nrfcloud/device-simulator \
       -c <configuration file from nrfcloud-cli> \
       -n <file with GPS NMEA sentences> \
       -a <file with accelerometer recording> \
-      -t <file with thermometer recording>
+      -t <file with thermometer recording> \
+      -d <file with device info>
     
 Example:
 
@@ -31,7 +31,8 @@ Example:
       -c my-device.json \
       -n /tmp/nmea-recording.txt \
       -a __tests__/sensors/accelerometer-recording.txt \
-      -t __tests__/sensors/thermometer-recording.txt
+      -t __tests__/sensors/thermometer-recording.txt \
+	  -d __tests__/sensors/device-info-recording.txt
     
 ## Sensor Data
 
@@ -53,11 +54,11 @@ An accelerometer recording can be found [here](./__tests__/sensors/accelerometer
 
 A thermometer recording can be found here [here](./__tests__/sensors/thermometer-recording.txt).
 
+### Device samples
+
+A device info sample can be found here [here](./__tests__/sensors/device-info-recording.txt).
+
 ## Creating Devices and Certs
-
-Clone this repo and install the dependencies:
-
-    npm ci
 
 Use `STAGE=dev STACK=dev node scripts/register-simulator.js` to create a new certificate.
 

@@ -2,6 +2,7 @@ import { FakeThermometer } from '../../src/sensors/FakeThermometer';
 import { FakeGps } from '../../src/sensors/FakeGps';
 import { ISensor } from '../../src/sensors/Sensor';
 import { FakeAccelerometer } from '../../src/sensors/FakeAccelerometer';
+import { FakeDevice } from '../../src/sensors/FakeDevice';
 
 jest.setTimeout(15000);
 
@@ -40,4 +41,11 @@ testFakeSensor(
   'fake accelerometer',
   new FakeAccelerometer(accelerometerRecording, false, 10),
   277,
+);
+
+const deviceInfoRecording = '__tests__/sensors/device-info-recording.txt';
+testFakeSensor(
+  'fake device info',
+  new FakeDevice(deviceInfoRecording, false, 10),
+  1,
 );
