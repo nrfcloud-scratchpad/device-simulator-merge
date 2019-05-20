@@ -18,9 +18,8 @@ phases:
     commands:
       - npm test
       - npx greenkeeper-lockfile-upload
-      - cp dist/cli.js dist/cli.js.bak
-      - echo "#!/usr/bin/env node" > dist/cli.js
-      - cat dist/cli.js.bak >> dist/cli.js
-      - chmod +x dist/cli.js
-      - rm dist/cli.js.bak
+      - mkdir bin
+      - echo "#!/usr/bin/env node" > bin/cli.js
+      - cat dist/cli.js >> bin/cli.js
+      - chmod +x bin/cli.js
       - npm i semantic-release; npx semantic-release || true
