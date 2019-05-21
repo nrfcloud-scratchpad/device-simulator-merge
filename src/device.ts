@@ -3,23 +3,25 @@ import { cyan, green, red, yellow, magenta } from 'colors';
 import * as dotenv from 'dotenv';
 import { connect } from './connection';
 import * as path from 'path';
+import { fota } from './fota';
 
 dotenv.config();
-
-console.log(process.env.DEVICE_ID);
 
 const main = async ({
   id,
   certificate,
   key,
   endpoint,
-  fwversion,
+  appFwVersion,
 }: program.Command) => {
   const keyFile = path.resolve(key);
   const certFile = path.resolve(certificate);
   const topics = {
     jobs: {
       notifyNext: `$aws/things/${id}/jobs/notify-next`,
+      update: (jobId: string) => `$aws/things/${id}/jobs/${jobId}/update`,
+      updateAccepted: (jobId: string) =>
+        `$aws/things/${id}/jobs/${jobId}/update/accepted`,
     },
     shadow: {
       update: `$aws/things/${id}/shadow/update`,
@@ -33,7 +35,7 @@ const main = async ({
     endpoint,
     region: endpoint.split('.')[2],
     topics,
-    fwversion: parseInt(fwversion, 10),
+    appFwVersion: parseInt(appFwVersion, 10),
   });
 
   console.log(cyan(`connecting to ${yellow(endpoint)}...`));
@@ -49,34 +51,12 @@ const main = async ({
     console.error(`AWS IoT error ${error.message}`);
   });
 
-  connection.on('connect', () => {
+  connection.on('connect', async () => {
     console.log(green('connected'));
-    // Publish firmware version
-    console.log(cyan(`reporting firmware version ${yellow(fwversion)}...`));
-    connection.publish(
-      topics.shadow.update,
-      JSON.stringify({
-        state: {
-          reported: {
-            nrfcloud__fwversion: fwversion,
-          },
-        },
-      }),
-      undefined,
-      error => {
-        if (error) {
-          throw error;
-        }
-        console.log(green('reported'));
-        // Listen for jobs
-        console.log(
-          cyan(`subscribing to ${yellow(topics.jobs.notifyNext)}...`),
-        );
-        connection.subscribe(topics.jobs.notifyNext, undefined, () => {
-          console.log(green('subscribed'));
-        });
-      },
-    );
+    const f = fota(id, connection);
+    await f.run({
+      appFwVersion,
+    });
   });
 
   connection.on('close', () => {
@@ -85,11 +65,6 @@ const main = async ({
 
   connection.on('reconnect', () => {
     console.log(magenta('reconnect'));
-  });
-
-  connection.on('message', (topic: string, payload: any) => {
-    console.log(magenta(`< ${topic}`));
-    console.log(magenta(payload));
   });
 };
 
@@ -110,7 +85,11 @@ program
     'AWS IoT MQTT endpoint',
     process.env.MQTT_ENDPOINT,
   )
-  .option('-f, --fwversion <fwversion>', 'Version of the firmware', 0)
+  .option(
+    '-a, --app-fw-version <appFwVersion>',
+    'Version of the app firmware',
+    1,
+  )
   .parse(process.argv);
 
 main(program).catch(error => {
