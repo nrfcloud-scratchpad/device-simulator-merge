@@ -121,12 +121,12 @@ export const fota = (deviceId: string, connection: device) => {
     }
   });
 
-  const reportAppFirmwareVersion = async (appFwVersion: number) => {
+  const reportAppFirmwareVersion = async (fwVersion: number) => {
     // Publish firmware version
     await publish(topics(deviceId).shadow.update._, {
       state: {
         reported: {
-          nrfcloud__app_fw_version: appFwVersion,
+          nrfcloud__fota_v1__app_v: fwVersion,
         },
       },
     });
