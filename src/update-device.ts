@@ -16,7 +16,6 @@ const main = async ({
   bucket,
   endpoint,
   firmware,
-  role,
 }: program.Command) => {
   const nextAppFwVersion = parseInt(appFwVersion, 10);
   if (!firmware) {
@@ -27,7 +26,6 @@ const main = async ({
     bucket,
     firmware,
     appFwVersion: nextAppFwVersion,
-    role,
   });
 
   console.log(
@@ -142,7 +140,6 @@ const main = async ({
 program
   .option('-d, --id <id>', 'id of the device', process.env.DEVICE_ID)
   .option('-b, --bucket <bucket>', 'S3 bucket', process.env.S3_BUCKET)
-  .option('-r, --role <role>', 'S3 access role', process.env.S3_ACCESS_ROLE)
   .option('-f, --firmware <firmware>', 'name of the firmware file')
   .option(
     '-e, --endpoint <endpoint>',
