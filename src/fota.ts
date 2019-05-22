@@ -29,6 +29,12 @@ type JobExecutionState = {
   versionNumber: number;
 };
 
+enum FotaStatus {
+  downloadFirmware = 'download_firmware',
+  applyUpdate = 'apply_update',
+  none = 'none',
+}
+
 type JobExecution = {
   jobId: string;
   status: JobExecutionStatus;
@@ -38,12 +44,6 @@ type JobExecution = {
   executionNumber: number;
   jobDocument: JobDocument;
 };
-
-enum FotaStatus {
-  downloadFirmware = 'downloadFirmware',
-  applyUpdate = 'applyUpdate',
-  none = 'none',
-}
 
 const topics = (deviceId: string) => ({
   jobs: {
