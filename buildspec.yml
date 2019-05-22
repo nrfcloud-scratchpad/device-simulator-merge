@@ -18,6 +18,7 @@ phases:
     - npm run lint
   build:
     commands:
+      - npx tsc
       - npx greenkeeper-lockfile-upload
       - mkdir bin
       - echo "#!/usr/bin/env node" > bin/device.js
