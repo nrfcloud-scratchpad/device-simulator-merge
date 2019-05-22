@@ -1,6 +1,7 @@
 import * as program from 'commander';
 import * as colors from 'colors';
 import * as dotenv from 'dotenv';
+import * as url from 'url';
 import { S3, IotData, Iot } from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -103,6 +104,14 @@ const main = async ({
   const jobId = uuid.v4();
   console.log(colors.cyan(`creating job ${colors.yellow(jobId)} ...`));
 
+  const { protocol, host, path } = url.parse(
+    await s3.getSignedUrl('getObject', {
+      Bucket: bucket,
+      Key: firmware,
+      Expires: 60 * 60 * 24 * 30,
+    }),
+  );
+
   await iot
     .createJob({
       jobId,
@@ -115,11 +124,7 @@ const main = async ({
         operation: 'app_fw_update',
         fwversion: nextAppFwVersion,
         size: ContentLength,
-        location: await s3.getSignedUrl('getObject', {
-          Bucket: bucket,
-          Key: firmware,
-          Expires: 60 * 60 * 24 * 30,
-        }),
+        location: { protocol, host, path },
       }),
       description: `Update ${id} to app version ${nextAppFwVersion}`,
       targetSelection: 'SNAPSHOT',
