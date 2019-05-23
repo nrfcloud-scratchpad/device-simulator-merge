@@ -18,7 +18,7 @@ enum JobDocumentOperation {
 
 type JobDocument = {
   operation: JobDocumentOperation;
-  fwversion: number;
+  fwversion: string;
   size: number;
   location: string;
 };
@@ -121,7 +121,7 @@ export const fota = (deviceId: string, connection: device) => {
     }
   });
 
-  const reportAppFirmwareVersion = async (fwVersion: number) => {
+  const reportAppFirmwareVersion = async (fwVersion: string) => {
     // Publish firmware version
     await publish(topics(deviceId).shadow.update._, {
       state: {
@@ -181,11 +181,9 @@ export const fota = (deviceId: string, connection: device) => {
     );
   };
 
-  const main = async (appFwVersion: number) => {
+  const main = async (appFwVersion: string) => {
     await reportAppFirmwareVersion(appFwVersion);
-    console.log(
-      green(`reported firmware version ${yellow(`${appFwVersion}`)}`),
-    );
+    console.log(green(`reported firmware version ${yellow(appFwVersion)}`));
     const job = await waitForNextUpdateJob();
     console.log(job);
     await acceptJob(job);
@@ -225,7 +223,7 @@ export const fota = (deviceId: string, connection: device) => {
         console.log(
           magenta(
             `Skipping applying the firmware update to ${yellow(
-              `${job.jobDocument.fwversion}`,
+              job.jobDocument.fwversion,
             )}...`,
           ),
         );
@@ -260,6 +258,6 @@ export const fota = (deviceId: string, connection: device) => {
     publish,
     registerListener,
     unregisterListener,
-    run: async (args: { appFwVersion: number }) => main(args.appFwVersion),
+    run: async (args: { appFwVersion: string }) => main(args.appFwVersion),
   };
 };

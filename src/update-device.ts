@@ -12,20 +12,25 @@ const iot = new Iot();
 
 const main = async ({
   id,
-  appFwVersion,
+  nextAppFwVersion,
   bucket,
   endpoint,
   firmware,
 }: program.Command) => {
-  const nextAppFwVersion = parseInt(appFwVersion, 10);
   if (!firmware) {
     throw new Error('Must provide firmware file');
+  }
+  if (!nextAppFwVersion) {
+    throw new Error('Must provide next app firmware version!');
+  }
+  if (nextAppFwVersion.lenght > 128) {
+    throw new Error('version string length must not be greater than 128!');
   }
   console.log({
     id,
     bucket,
     firmware,
-    appFwVersion: nextAppFwVersion,
+    nextAppFwVersion,
   });
 
   console.log(
@@ -49,15 +54,13 @@ const main = async ({
   console.log(
     colors.cyan(
       `checking if app firmware version ${colors.yellow(
-        `${nextAppFwVersion}`,
+        nextAppFwVersion,
       )} can be applied to device ${colors.yellow(id)}...`,
     ),
   );
   const { payload } = await iotData.getThingShadow({ thingName: id }).promise();
-  const reportedAppFwVersion = parseInt(
-    JSON.parse(payload!.toString()).state.reported.nrfcloud__fota_v1__app_v,
-    10,
-  );
+  const reportedAppFwVersion = JSON.parse(payload!.toString()).state.reported
+    .nrfcloud__fota_v1__app_v;
   if (reportedAppFwVersion === undefined) {
     throw new Error(
       `device ${colors.yellow(
@@ -69,33 +72,7 @@ const main = async ({
   }
   console.log(
     colors.cyan(
-      `device app firmware version: ${colors.yellow(
-        `${reportedAppFwVersion}`,
-      )}`,
-    ),
-  );
-  if (!reportedAppFwVersion || reportedAppFwVersion >= nextAppFwVersion) {
-    throw new Error(
-      `app firmware version ${colors.yellow(
-        `${nextAppFwVersion}`,
-      )} cannot be applied to device ${colors.yellow(
-        id,
-      )} because it is not greater than the device app firmware version ${colors.yellow(
-        `${reportedAppFwVersion}`,
-      )}...`,
-    );
-  }
-  console.log(
-    colors.green(
-      `Update to ${colors.yellow(`${nextAppFwVersion}`)} can be applied.`,
-    ),
-  );
-
-  console.log(
-    colors.cyan(
-      `checking if app firmware update jobs are  ${colors.yellow(
-        `${nextAppFwVersion}`,
-      )} can be applied to device ${colors.yellow(id)}...`,
+      `device app firmware version: ${colors.yellow(reportedAppFwVersion)}`,
     ),
   );
 
@@ -147,9 +124,8 @@ program
     process.env.MQTT_ENDPOINT,
   )
   .option(
-    '-a, --app-fw-version <appFwVersion>',
-    'Version of the app firmware',
-    0,
+    '-a, --app-fw-version <nextAppFwVersion>',
+    'Next version of the app firmware',
   )
   .parse(process.argv);
 
