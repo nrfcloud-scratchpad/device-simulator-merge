@@ -56,7 +56,7 @@ Find the device id of the new device and `export` it:
 curl https://api.dev.nrfcloud.com/v1/devices -H "Authorization: Bearer $API_KEY"
 export DEVICE_ID=<your_device_id>
 ```
-Invoke the [`createDeviceCertificate`](https://docs.api.nrfcloud.com/api/api-rest.html#createdevicecertificate) and store the JSON response in `CERTS_RESPONSE`:
+Invoke the [`createDeviceCertificate`](https://docs.api.nrfcloud.com/api/api-rest.html#createdevicecertificate) endpoint and store the JSON response in `CERTS_RESPONSE`:
 ```
 export CERTS_RESPONSE=$(curl -X POST https://api.dev.nrfcloud.com/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
 ```
