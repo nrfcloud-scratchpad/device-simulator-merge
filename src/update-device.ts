@@ -124,7 +124,7 @@ program
     process.env.MQTT_ENDPOINT,
   )
   .option(
-    '-a, --app-fw-version <nextAppFwVersion>',
+    '-a, --next-app-fw-version <nextAppFwVersion>',
     'Next version of the app firmware',
   )
   .parse(process.argv);
