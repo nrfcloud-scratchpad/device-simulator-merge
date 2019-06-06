@@ -6,3 +6,12 @@
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 AWS IoT Thing simulator for nRF91 DFU.
+
+### Getting Started
+```sh
+# compile to js
+npx tsc
+
+# see source files for a list of accepted arguments
+node dist/(update-device.js|device.js|dfu.js|connection.js)
+```
