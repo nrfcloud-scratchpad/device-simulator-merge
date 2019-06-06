@@ -116,7 +116,7 @@ const main = async ({
 
 program
   .option('-d, --id <id>', 'id of the device', process.env.DEVICE_ID)
-  .option('-b, --s3-bucket <bucket>', 'S3 bucket', process.env.BUCKET)
+  .option('-b, --s3-bucket <bucket>', 'S3 bucket', process.env.S3_BUCKET)
   .option('-f, --firmware <firmware>', 'name of the firmware file')
   .option(
     '-e, --endpoint <endpoint>',
