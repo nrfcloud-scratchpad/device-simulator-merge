@@ -8,10 +8,28 @@
 AWS IoT Thing simulator for nRF91 DFU.
 
 ### Getting Started
-```sh
+```bash
+# install deps
+npm i
+
 # compile to js
 npx tsc
 
-# see source files for a list of accepted arguments
-node dist/(update-device.js|device.js|dfu.js|connection.js)
+# put device in DFU mode (this will cause it to wait for a job)
+node dist/device.js \
+  -d <device id> \
+  -e <mqtt endpoint> \
+  -a <fw version> \
+  -c <location of device cert> \
+  -k <location of device key> 
+
+# create a job for a device
+node dist/update-device.js \
+  -d <device id> \
+  -e <mqtt endpoint> \
+  -a <next fw version> \
+  -b <s3 bucket> \
+  -f <name of the firmware file> 
+
+
 ```
