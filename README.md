@@ -39,7 +39,7 @@ node dist/update-device.js \
 ### Create device and subscribe to job updates
 
 1. Login to [nrfcloud dev site](https://dev.nrfcloud.com) and go to the accounts page and grab your API key
-1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
+1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) if needed
 1. Setup your environment:
 
 ```sh
@@ -56,7 +56,7 @@ export DEVICE_ID=<your_device_id>
 # create a device cert and store the JSON response in CERTS_RESPONSE:
 export CERTS_RESPONSE=$(curl -X POST https://api.dev.nrfcloud.com/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
 
-# either export 'MQTT_ENDPOINT' manually or via the 'aws iot' command ()
+# either export 'MQTT_ENDPOINT' manually or via the 'aws iot' command (remember for next step)
 export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | grep endpointAddress | awk '{ print  $2; }' | tr -d '"')
 ```
 
@@ -72,6 +72,7 @@ curl -X DELETE https://api.dev.nrfcloud.com/v1/devices/$DEVICE_ID -H "Authorizat
 
 ### Create a new job
 1. Open a new terminal window
+1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html) if needed
 1. Setup your environment:
 
 ```sh
@@ -86,16 +87,10 @@ export AWS_REGION=us-east-1
 export AWS_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 
 # s3 bucket
-export BUCKET=<s3 bucket name>
-
-# firware name (name of the json file that resides in that s3 bucket). contents just has to be valid json, no format for this testing repo.
-export FIRMWARE=<filename.json>
-
-# version of the fw. any string will do.
-export NEXT_APP_FW_VERSION=<fw version>
+export S3_BUCKET=<s3 bucket name>
 ```
 
-3. Run the simulator
+4. Run the simulator
 ```sh
-node dist/update-device.js 
+node dist/update-device.js -f <firmware file in s3 bucket>.json -a 5
 ```
