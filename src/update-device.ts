@@ -60,13 +60,13 @@ const main = async ({
   );
   const { payload } = await iotData.getThingShadow({ thingName: id }).promise();
   const reportedAppFwVersion = JSON.parse(payload!.toString()).state.reported
-    .nrfcloud__fota_v1__app_v;
+    .nrfcloud__dfu_v1__app_v;
   if (reportedAppFwVersion === undefined) {
     throw new Error(
       `device ${colors.yellow(
         id,
       )} has unknown app firmware version. Make sure it reports it in ${colors.magenta(
-        'nrfcloud__fota_v1__app_v',
+        'nrfcloud__dfu_v1__app_v',
       )}`,
     );
   }

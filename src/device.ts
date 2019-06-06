@@ -3,7 +3,7 @@ import { cyan, green, red, yellow, magenta } from 'colors';
 import * as dotenv from 'dotenv';
 import { connect } from './connection';
 import * as path from 'path';
-import { fota } from './fota';
+import { dfu } from './dfu';
 
 dotenv.config();
 
@@ -53,7 +53,7 @@ const main = async ({
 
   connection.on('connect', async () => {
     console.log(green('connected'));
-    const f = fota(id, connection);
+    const f = dfu(id, connection);
     await f.run({
       appFwVersion,
     });

@@ -25,11 +25,11 @@ type JobDocument = {
 
 type JobExecutionState = {
   status: JobExecutionStatus;
-  statusDetails: { nextState: FotaStatus };
+  statusDetails: { nextState: DfuStatus };
   versionNumber: number;
 };
 
-enum FotaStatus {
+enum DfuStatus {
   downloadFirmware = 'download_firmware',
   applyUpdate = 'apply_update',
   none = 'none',
@@ -60,7 +60,7 @@ const topics = (deviceId: string) => ({
   },
 });
 
-export const fota = (deviceId: string, connection: device) => {
+export const dfu = (deviceId: string, connection: device) => {
   const publish = (topic: string, payload: object) =>
     new Promise((resolve, reject) => {
       connection.publish(topic, JSON.stringify(payload), undefined, error => {
@@ -126,7 +126,7 @@ export const fota = (deviceId: string, connection: device) => {
     await publish(topics(deviceId).shadow.update._, {
       state: {
         reported: {
-          nrfcloud__fota_v1__app_v: fwVersion,
+          nrfcloud__dfu_v1__app_v: fwVersion,
         },
       },
     });
@@ -148,7 +148,7 @@ export const fota = (deviceId: string, connection: device) => {
   const updateJob = async (
     job: JobExecution,
     expectedVersion: number,
-    nextState: FotaStatus,
+    nextState: DfuStatus,
     status: JobExecutionStatus,
   ) => {
     await publish(topics(deviceId).jobs.update(job.jobId)._, {
@@ -164,7 +164,7 @@ export const fota = (deviceId: string, connection: device) => {
   const updateJobProgress = async (
     job: JobExecution,
     expectedVersion: number,
-    nextState: FotaStatus,
+    nextState: DfuStatus,
   ) => {
     await updateJob(
       job,
@@ -205,7 +205,7 @@ export const fota = (deviceId: string, connection: device) => {
       return;
     }
     switch (payload.executionState.statusDetails.nextState) {
-      case FotaStatus.downloadFirmware:
+      case DfuStatus.downloadFirmware:
         console.log(
           magenta(
             `Skipping downloading the firmware from ${yellow(
@@ -216,10 +216,10 @@ export const fota = (deviceId: string, connection: device) => {
         await updateJobProgress(
           job,
           payload.executionState.versionNumber,
-          FotaStatus.applyUpdate,
+          DfuStatus.applyUpdate,
         );
         break;
-      case FotaStatus.applyUpdate:
+      case DfuStatus.applyUpdate:
         console.log(
           magenta(
             `Skipping applying the firmware update to ${yellow(
@@ -230,7 +230,7 @@ export const fota = (deviceId: string, connection: device) => {
         await updateJob(
           job,
           payload.executionState.versionNumber,
-          FotaStatus.none,
+          DfuStatus.none,
           JobExecutionStatus.SUCCEEDED,
         );
         // handle next job
@@ -246,11 +246,7 @@ export const fota = (deviceId: string, connection: device) => {
       jobUpdateAcceptedTopic,
       handleJobUpdateAccepted(job),
     );
-    await updateJobProgress(
-      job,
-      job.versionNumber,
-      FotaStatus.downloadFirmware,
-    );
+    await updateJobProgress(job, job.versionNumber, DfuStatus.downloadFirmware);
   };
 
   return {

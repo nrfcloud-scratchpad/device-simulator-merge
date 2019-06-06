@@ -1,7 +1,7 @@
 {
-  "name": "@nrfcloud/fota-device-simulator",
+  "name": "@nrfcloud/dfu-device-simulator",
   "version": "0.0.0-development",
-  "description": "AWS IoT Thing simulator for nRF91 FOTA",
+  "description": "AWS IoT Thing simulator for nRF91 DFU",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npm run tslint && npm run prettier:lint",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nRFCloud/fota-device-simulator.git"
+    "url": "git+https://github.com/nRFCloud/dfu-device-simulator.git"
   },
   "author": "Nordic Semiconductor ASA | nordicsemi.no",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/nRFCloud/fota-device-simulator/issues"
+    "url": "https://github.com/nRFCloud/dfu-device-simulator/issues"
   },
-  "homepage": "https://github.com/nRFCloud/fota-device-simulator#readme",
+  "homepage": "https://github.com/nRFCloud/dfu-device-simulator#readme",
   "devDependencies": {
     "@commitlint/cli": "^8.0.0",
     "@commitlint/config-angular": "^8.0.0",
