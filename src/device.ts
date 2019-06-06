@@ -8,14 +8,21 @@ import { dfu } from './dfu';
 dotenv.config();
 
 const main = async ({
+  certsResponse,
   id,
   certificate,
   key,
   endpoint,
   appFwVersion,
 }: program.Command) => {
-  const keyFile = path.resolve(key);
-  const certFile = path.resolve(certificate);
+  if (certsResponse) {
+    const config = JSON.parse(certsResponse);
+    key = Buffer.from(config.privateKey, 'utf-8');
+    certificate = Buffer.from(config.certificate, 'utf-8');
+  } else {
+    key = path.resolve(key);
+    certificate = path.resolve(certificate);
+  }
   const topics = {
     jobs: {
       notifyNext: `$aws/things/${id}/jobs/notify-next`,
@@ -30,8 +37,8 @@ const main = async ({
 
   console.log({
     id,
-    keyFile,
-    certFile,
+    key,
+    certificate,
     endpoint,
     region: endpoint.split('.')[2],
     topics,
@@ -42,8 +49,8 @@ const main = async ({
 
   const connection = connect({
     id,
-    certificate: certFile,
-    key: keyFile,
+    certificate,
+    key,
     endpoint,
   });
 
@@ -69,6 +76,11 @@ const main = async ({
 };
 
 program
+  .option(
+    '-cr, --certs-response <certsResponse>',
+    'JSON returned by call to the Device API endpoint: POST /devices/{deviceid}/certificates',
+    process.env.CERTS_RESPONSE,
+  )
   .option('-d, --id <id>', 'id of the device', process.env.DEVICE_ID)
   .option(
     '-c, --certificate <certificate>',
