@@ -153,9 +153,7 @@ export class FakeAccelerometer extends EventEmitter implements ISensor {
 
     if (!fileExists) {
       throw new Error(
-        `Movement sensor recording with filename '${
-          this.movementSensorRecording
-        }' does not exist.`,
+        `Movement sensor recording with filename '${this.movementSensorRecording}' does not exist.`,
       );
     }
 

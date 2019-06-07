@@ -47,9 +47,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
 
       if (!foundMethod) {
         throw new Error(
-          `Pairing method ${
-            this.selectedPairingMethod.methodName
-          } is not registered with the pairing engine.`,
+          `Pairing method ${this.selectedPairingMethod.methodName} is not registered with the pairing engine.`,
         );
       } else {
         await foundMethod.cancelRetrievePattern();
@@ -65,9 +63,7 @@ export class PairingEngine extends EventEmitter implements IPairingEngine {
 
       if (!foundMethod) {
         throw new Error(
-          `Pairing method ${
-            state.config.method
-          } is not registered with the pairing engine.`,
+          `Pairing method ${state.config.method} is not registered with the pairing engine.`,
         );
       } else {
         this.selectedPairingMethod = foundMethod;

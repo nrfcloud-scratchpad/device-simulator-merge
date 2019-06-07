@@ -58,9 +58,7 @@ export class FakeDevice extends EventEmitter implements ISensor {
   async start(): Promise<void> {
     if (!fs.existsSync(this.sensorRecording)) {
       throw new Error(
-        `Sensor recording with filename '${
-          this.sensorRecording
-        }' does not exist.`,
+        `Sensor recording with filename '${this.sensorRecording}' does not exist.`,
       );
     }
 
