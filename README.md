@@ -19,13 +19,14 @@ npx tsc
 ### Commands
 ```sh
 # create a device and subscribe to jobs topic
+# if using -cr, -c and -k are not needed.
 node dist/device.js \
   -d <device id> \
   -e <mqtt endpoint> \
   -a <initial fw version> \
+  -cr <certs response from API> \
   -c <location of device cert> \
   -k <location of device key> \
-  -cr <certs response from API>
 
 # create a job for a device
 node dist/update-device.js \
