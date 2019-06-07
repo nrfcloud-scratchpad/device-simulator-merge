@@ -91,9 +91,7 @@ const main = async ({
     .createJob({
       jobId,
       targets: [
-        `arn:aws:iot:${process.env.AWS_REGION}:${
-          process.env.AWS_ACCOUNT
-        }:thing/${id}`,
+        `arn:aws:iot:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT}:thing/${id}`,
       ],
       document: JSON.stringify({
         operation: 'app_fw_update',
