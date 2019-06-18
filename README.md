@@ -77,6 +77,7 @@ node dist/device.js
 ### Create a new job
 1. Open a new terminal window
 1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
+1. If running this on your own AWS account, ensure that Event-based Messages for jobs are enabled in [AWS IoT Settings](https://us-east-1.console.aws.amazon.com/iot/home?region=us-east-1#/settings).
 1. Setup your environment:
 
 ```sh
