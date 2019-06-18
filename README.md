@@ -44,18 +44,19 @@ node dist/update-device.js \
 1. Setup your environment:
 
 ```sh
-# setup API key
+# setup API variables
 export API_KEY=<your_api_key>
+export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
 
 # create a new generic device
-curl -X POST https://api.dev.nrfcloud.com/v1/devices -H "Authorization: Bearer $API_KEY"
+curl -X POST $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY"
 
 # find the device id of the new device and export it (remember this for next step)
-curl https://api.dev.nrfcloud.com/v1/devices -H "Authorization: Bearer $API_KEY"
+curl $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY" | jq
 export DEVICE_ID=<your_device_id>
 
 # create a device cert and store the JSON response in CERTS_RESPONSE:
-export CERTS_RESPONSE=$(curl -X POST https://api.dev.nrfcloud.com/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
+export CERTS_RESPONSE=$(curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
 
 # store the id from the response, which is the ARN for the newly created device certificate:
 echo $CERTS_RESPONSE
@@ -103,5 +104,5 @@ node dist/update-device.js -f <firmware file in s3 bucket>.json -a <new firmware
 ### Clean up (if desired)
 
 ```
-curl -X DELETE https://api.dev.nrfcloud.com/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY"
+curl -X DELETE $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY"
 ```
