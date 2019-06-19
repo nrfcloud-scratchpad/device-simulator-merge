@@ -75,7 +75,7 @@ export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | 
 node dist/device.js
 ```
 
-### Create a new job
+### Create a new job using the update-device script
 1. Open a new terminal window
 1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 1. If running this on your own AWS account, ensure that Event-based Messages for jobs are enabled in [AWS IoT Settings](https://us-east-1.console.aws.amazon.com/iot/home?region=us-east-1#/settings).
@@ -86,23 +86,55 @@ node dist/device.js
 export DEVICE_ID=<device id>
 export MQTT_ENDPOINT=<mqtt endpoint>
 
-# export region and aws account
+# export region
 export AWS_REGION=us-east-1
 
-# aws account id can be found in the console
+# export aws account id
 export AWS_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 
 # s3 bucket
 export S3_BUCKET=<s3 bucket name>
 ```
 
-4. Run the simulator
+5. Run the simulator
 ```sh
 node dist/update-device.js -f <firmware file in s3 bucket>.json -a <new firmware version string>
 ```
 
+### Create a new job using the Device API
+1. Open a new terminal window
+
+```sh
+# setup API variables
+export API_KEY=<your_api_key>
+export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
+```
+
+2. Upload a dummy firmware file as a base64 encoding string
+```sh
+curl -X POST $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" -d '{"file": "ewogICAgIm9wZXJhdGlvbiI6ImN1c3RvbUpvYiIsCiAgICAib3RoZXJJbmZvIjoic29tZVZhbHVlIgp9Cg==", "filename": "my-firmware.hex"}'
+```
+
+3. Verify the file was uploaded
+```sh
+curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq
+```
+
+4. Export the filename
+```sh
+export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-0588-4dab-bb26-5ba47e45ecc7-my-firmware.hex>
+```
+
+5. Create the DFU job
+```sh
+curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
+```
+
+6. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
+
 ### Clean up (if desired)
 
-```
+```sh
+curl -X DELETE $API_HOST/v1/firmwares/$FILENAME -H "Authorization: Bearer $API_KEY"
 curl -X DELETE $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY"
 ```
