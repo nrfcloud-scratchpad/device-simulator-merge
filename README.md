@@ -127,6 +127,7 @@ export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-05
 
 5. Create the DFU job
 ```sh
+export DEVICE_ID=<device id from previous steps>
 curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
 ```
 
