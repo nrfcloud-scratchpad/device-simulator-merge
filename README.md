@@ -110,7 +110,7 @@ export API_KEY=<your_api_key>
 export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
 ```
 
-2. Upload a dummy firmware file as a base64 encoding string
+2. Upload a dummy firmware file as a base64-encoded string.
 ```sh
 curl -X POST $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" -d '{"file": "ewogICAgIm9wZXJhdGlvbiI6ImN1c3RvbUpvYiIsCiAgICAib3RoZXJJbmZvIjoic29tZVZhbHVlIgp9Cg==", "filename": "my-firmware.hex"}'
 ```
