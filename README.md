@@ -131,11 +131,17 @@ export DEVICE_ID=<device id from previous steps>
 curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
 ```
 
-6. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
+6. View your DFU job
+```sh
+curl $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" | jq
+```
+
+7. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
 
 ### Clean up (if desired)
 
 ```sh
+curl -X DELETE $API_HOST/v1/dfu-jobs/<jobId from GET /dfu-jobs> -H "Authorization: Bearer $API_KEY"
 curl -X DELETE $API_HOST/v1/firmwares/$FILENAME -H "Authorization: Bearer $API_KEY"
 curl -X DELETE $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY"
 ```
