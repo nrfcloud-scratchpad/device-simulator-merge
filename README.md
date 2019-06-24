@@ -125,18 +125,23 @@ curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq
 export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-0588-4dab-bb26-5ba47e45ecc7-my-firmware.hex>
 ```
 
-5. Create the DFU job
+5. Enable DFU on the device (if not already enabled)
+```sh
+curl -X PATCH $API_HOST/v1/devices/$DEVICE_ID/state -d '{ "reported": { "device": { "serviceInfo": ["dfu"] } } }' -H "Authorization: Bearer $API_KEY"
+```
+
+6. Create the DFU job
 ```sh
 export DEVICE_ID=<device id from previous steps>
 curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
 ```
 
-6. View your DFU job
+7. View your DFU job
 ```sh
 curl $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" | jq
 ```
 
-7. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
+8. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
 
 ### Clean up (if desired)
 
