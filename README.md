@@ -112,7 +112,7 @@ export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
 
 2. Upload a dummy firmware file as a base64-encoded string.
 ```sh
-curl -X POST $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" -d '{"file": "ewogICAgIm9wZXJhdGlvbiI6ImN1c3RvbUpvYiIsCiAgICAib3RoZXJJbmZvIjoic29tZVZhbHVlIgp9Cg==", "filename": "my-firmware.hex"}'
+curl -X POST $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" -d '{"file": "ewogICAgIm9wZXJhdGlvbiI6ImN1c3RvbUpvYiIsCiAgICAib3RoZXJJbmZvIjoic29tZVZhbHVlIgp9Cg==", "filename": "my-firmware.bin"}'
 ```
 
 3. Verify the file was uploaded
@@ -122,7 +122,7 @@ curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq
 
 4. Export the filename
 ```sh
-export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-0588-4dab-bb26-5ba47e45ecc7-my-firmware.hex>
+export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-0588-4dab-bb26-5ba47e45ecc7-my-firmware.bin>
 ```
 
 5. Enable DFU on the device (if not already enabled)
