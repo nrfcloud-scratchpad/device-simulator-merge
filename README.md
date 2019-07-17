@@ -55,16 +55,8 @@ curl -X POST $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY"
 curl $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY" | jq
 export DEVICE_ID=<your_device_id>
 
-# create a device cert and store the JSON response in CERTS_RESPONSE:
-export CERTS_RESPONSE=$(curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
-
-# store the id from the response, which is the ARN for the newly created device certificate:
-echo $CERTS_RESPONSE
-export CERT_ID=<your_cert_id>
-
-# create and attach an IoT policy to the cert which will allow the device to connect and communicate over all the necessary topics
-export POLICY_NAME=$(aws iot create-policy --policy-name dfu_$DEVICE_ID --policy-document file://data/policy.json | jq -r '.policyName')
-aws iot attach-policy --policy-name $POLICY_NAME --target $CERT_ID
+# create and attach a device cert:
+curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
 
 # either export 'MQTT_ENDPOINT' manually or via the 'aws iot' command (remember for next step)
 export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | grep endpointAddress | awk '{ print  $2; }' | tr -d '"')
@@ -108,6 +100,7 @@ node dist/update-device.js -f <firmware file in s3 bucket>.json -a <new firmware
 # setup API variables
 export API_KEY=<your_api_key>
 export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
+export DEVICE_ID=<device id from previous steps>
 ```
 
 2. Upload a dummy firmware file as a base64-encoded string.
@@ -132,7 +125,6 @@ curl -X PATCH $API_HOST/v1/devices/$DEVICE_ID/state -d '{ "reported": { "device"
 
 6. Create the DFU job
 ```sh
-export DEVICE_ID=<device id from previous steps>
 curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
 ```
 
