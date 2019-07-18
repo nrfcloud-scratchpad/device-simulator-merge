@@ -115,7 +115,7 @@ curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq
 
 4. Export the filename
 ```sh
-export FILENAME=<filename from above, to the right of the "/", e.g., ae8a992c-0588-4dab-bb26-5ba47e45ecc7-my-firmware.bin>
+export FILENAME=<filename you uploaded>
 ```
 
 5. Enable DFU on the device (if not already enabled)
