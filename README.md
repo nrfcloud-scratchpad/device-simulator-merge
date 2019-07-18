@@ -56,7 +56,7 @@ curl $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY" | jq
 export DEVICE_ID=<your_device_id>
 
 # create and attach a device cert:
-curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
+export CERTS_RESPONSE=$(curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
 
 # either export 'MQTT_ENDPOINT' manually or via the 'aws iot' command (remember for next step)
 export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | grep endpointAddress | awk '{ print  $2; }' | tr -d '"')
