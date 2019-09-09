@@ -60,10 +60,11 @@ export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | 
 ```sh
 node dist/device.js
 ```
-You should see some JSON output, with something such as:
+You should see some JSON output, with something like this at the end:
 ```sh
-subscribed to $aws/things/<your_device_id>/jobs/notify-next` at the end.
+subscribed to $aws/things/<your_device_id>/jobs/notify-next
 ```
+This indicates that the device connected to AWS, was provisioned, and successfully subscribed to the MQTT topic that will receive the DFU job you are about to create.
 
 ### Associate the device with your account (tenant)
 1. Open a new terminal window/tab.
