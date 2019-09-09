@@ -14,12 +14,16 @@ npm i
 
 # compile to js
 npx tsc
+
+# install jq
+https://stedolan.github.io/jq/download/
 ```
 
 ### Commands
 ```sh
-# create a device and subscribe to jobs topic
-# if using -cr, -c and -k are not needed.
+# If you follow the steps below you will not need to 
+# use any of these params because they are all set 
+# via environment variables.
 node dist/device.js \
   -d <device id> \
   -e <mqtt endpoint> \
@@ -27,118 +31,93 @@ node dist/device.js \
   -cr <certs response from API> \
   -c <location of device cert> \
   -k <location of device key> \
-
-# create a job for a device
-node dist/update-device.js \
-  -d <device id> \
-  -e <mqtt endpoint> \
-  -a <next fw version> \
-  -b <s3 bucket> \
-  -f <name of the firmware file> 
 ```
 
-### Create device and subscribe to job updates
+### Connect a device and subscribe to the job updates MQTT topic
 
 1. Login to [nrfcloud dev site](https://dev.nrfcloud.com) and go to the accounts page and grab your API key
-1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
-1. Setup your environment:
-
-```sh
-# setup API variables
-export API_KEY=<your_api_key>
-export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
-
-# create a new generic device
-curl -X POST $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY"
-
-# find the device id of the new device and export it (remember this for next step)
-curl $API_HOST/v1/devices -H "Authorization: Bearer $API_KEY" | jq
-export DEVICE_ID=<your_device_id>
-
-# create and attach a device cert:
-export CERTS_RESPONSE=$(curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -H "Authorization: Bearer $API_KEY")
-
-# either export 'MQTT_ENDPOINT' manually or via the 'aws iot' command (remember for next step)
-export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | grep endpointAddress | awk '{ print  $2; }' | tr -d '"')
-```
-
-4. Run the simulator:
-```sh
-node dist/device.js
-```
-
-### Create a new job using the update-device script
-1. Open a new terminal window
 1. Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 1. If running this on your own AWS account, ensure that Event-based Messages for jobs are enabled in [AWS IoT Settings](https://us-east-1.console.aws.amazon.com/iot/home?region=us-east-1#/settings).
 1. Setup your environment:
 
 ```sh
-# export device id and mqtt endpoint from previous steps
-export DEVICE_ID=<device id>
-export MQTT_ENDPOINT=<mqtt endpoint>
-
-# export region
-export AWS_REGION=us-east-1
-
-# export aws account id
-export AWS_ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
-
-# s3 bucket
-export S3_BUCKET=<s3 bucket name>
-```
-
-5. Run the simulator
-```sh
-node dist/update-device.js -f <firmware file in s3 bucket>.json -a <new firmware version string>
-```
-
-### Create a new job using the Device API
-1. Open a new terminal window
-
-```sh
-# setup API variables
+# setup environment variables
 export API_KEY=<your_api_key>
 export API_HOST=<your_api_host, e.g., https://api.dev.nrfcloud.com>
-export DEVICE_ID=<device id from previous steps>
+export AWS_REGION=us-east-1 #if your region is different, change it here
+export DEVICE_RAND=$(node -e 'process.stdout.write(Math.floor(1000000000 + Math.random() * 9000000000).toString())')
+export DEVICE_ID=nrf-$DEVICE_RAND
+export DEVICE_PIN=123456
+
+# create device certificates
+export CERTS_RESPONSE=$(curl -X POST $API_HOST/v1/devices/$DEVICE_ID/certificates -d "$DEVICE_PIN" -H "Authorization: Bearer $API_KEY")
+
+# set the MQTT_ENDPOINT
+export MQTT_ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | grep endpointAddress | awk '{ print  $2; }' | tr -d '"')
 ```
 
-2. Upload a dummy firmware file as a base64-encoded string.
+5. Run the simulator, which will just-in-time provision (JITP) the device on nRFCloud and subscribe it to the job updates topic (*NOTE*: JITP can take 20-30 seconds, so be patient...):
+```sh
+node dist/device.js
+```
+You should see some JSON output, with something such as:
+```sh
+subscribed to $aws/things/<your_device_id>/jobs/notify-next` at the end.
+```
+
+### Associate the device with your account (tenant)
+1. Open a new terminal window/tab.
+1. Set up the environment variables (see above, but use the same `DEVICE_ID` that you had generated).
+1. Call the `association` endpoint:
+
+```sh
+curl -X PUT $API_HOST/v1/association/$DEVICE_ID -d "$DEVICE_PIN" -H "Authorization: Bearer $API_KEY"
+
+# view your device
+curl $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY" | jq
+```
+
+### Create a new DFU job
+1. Upload a dummy firmware file as a base64-encoded string.
 ```sh
 curl -X POST $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" -d '{"file": "ewogICAgIm9wZXJhdGlvbiI6ImN1c3RvbUpvYiIsCiAgICAib3RoZXJJbmZvIjoic29tZVZhbHVlIgp9Cg==", "filename": "my-firmware.bin"}'
 ```
 
-3. Verify the file was uploaded
+2. Set the `FILENAME` variable by calling the `firmwares` endpoint:
 ```sh
-curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq
+export FILENAME=$(curl $API_HOST/v1/firmwares -H "Authorization: Bearer $API_KEY" | jq -r '.items[0].filename')
 ```
 
-4. Export the filename
-```sh
-export FILENAME=<filename you uploaded>
-```
-
-5. Enable DFU on the device (if not already enabled)
+3. Enable DFU on the device (if not already enabled)
 ```sh
 curl -X PATCH $API_HOST/v1/devices/$DEVICE_ID/state -d '{ "reported": { "device": { "serviceInfo": ["dfu"] } } }' -H "Authorization: Bearer $API_KEY"
 ```
 
-6. Create the DFU job
+4. Create the DFU job
 ```sh
 curl -X POST $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" -d '{ "deviceIdentifiers": ["'$DEVICE_ID'"], "filename": "'$FILENAME'", "version": "1.1" }'
 ```
 
-7. View your DFU job
+5. View your DFU job
 ```sh
 curl $API_HOST/v1/dfu-jobs -H "Authorization: Bearer $API_KEY" | jq
 ```
 
-8. Verify the job succeeded in the other tab where you ran `node dist/device.js`.
+6. Verify the job succeeded in the other tab where you ran `node dist/device.js`. You should see something like:
+```sh
+< $aws/things/nrf-9354733136/jobs/notify-next
+<
+{
+  "timestamp": 1568062501
+}
+```
+If you do not see this it's possible that a previously created job has not succeeded. This will block any newly created jobs from running. You can check this by using the `GET /dfu-jobs` endpoint (as you did above) and then using `DELETE $API_HOST/v1/dfu-jobs/<your-jobId>` for any 
+previously created jobs that has a status other than `SUCCEEDED`.
 
 ### Clean up (if desired)
 
 ```sh
-curl -X DELETE $API_HOST/v1/dfu-jobs/<jobId from GET /dfu-jobs> -H "Authorization: Bearer $API_KEY"
+curl -X DELETE $API_HOST/v1/dfu-jobs/<your-jobId> -H "Authorization: Bearer $API_KEY"
 curl -X DELETE $API_HOST/v1/firmwares/$FILENAME -H "Authorization: Bearer $API_KEY"
 curl -X DELETE $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY"
 ```
