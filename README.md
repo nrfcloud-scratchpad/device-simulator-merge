@@ -62,19 +62,23 @@ node dist/device.js
 ```
 You should see some JSON output, with something like this at the end:
 ```sh
-subscribed to $aws/things/<your_device_id>/jobs/notify-next
+reported firmware version 1
 ```
-This indicates that the device connected to AWS, was provisioned, and successfully subscribed to the MQTT topic that will receive the DFU job you are about to create.
+This indicates that the device connected to AWS, was provisioned, and updated its shadow.
 
 ### Associate the device with your account (tenant)
 1. Open a new terminal window/tab.
-1. Set up the environment variables (see above, but use the same `DEVICE_ID` that you had generated).
-1. Call the `association` endpoint:
-
+2. Set up the environment variables (see above, but use the same `DEVICE_ID` that you had generated).
+3. Call the `association` endpoint:
 ```sh
 curl -X PUT $API_HOST/v1/association/$DEVICE_ID -d "$DEVICE_PIN" -H "Authorization: Bearer $API_KEY"
-
-# view your device
+```
+In the other tab you should see a new line of JSON output indicating that your device has successfully subscribed to the jobs topic for DFU:
+```sh
+subscribed to $aws/things/<deviceId>/jobs/notify-next
+```
+4. View your device:
+```sh
 curl $API_HOST/v1/devices/$DEVICE_ID -H "Authorization: Bearer $API_KEY" | jq
 ```
 
