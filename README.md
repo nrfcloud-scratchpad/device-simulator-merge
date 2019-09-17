@@ -8,7 +8,8 @@
 AWS IoT Thing simulator for nRF91 DFU.
 
 ```diff
-- September 2019: This project has been archived and is no longer maintained. Its functionality is now moved to the https://github.com/nRFCloud/device-simulator-v2 project, which we recommend you use instead.
+- September 2019: This project has been archived and is no longer maintained. 
+- Please use https://github.com/nRFCloud/device-simulator-v2 instead.
 ```
 
 ### Getting Started
