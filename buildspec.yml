@@ -18,10 +18,17 @@ phases:
     - npm run lint
   build:
     commands:
+      - npx tsc
       - npm test
       - npx greenkeeper-lockfile-upload
       - mkdir bin
       - echo "#!/usr/bin/env node" > bin/cli.js
       - cat dist/cli.js >> bin/cli.js
       - chmod +x bin/cli.js
+      - npx tsc
+      - npx greenkeeper-lockfile-upload
+      - mkdir bin
+      - echo "#!/usr/bin/env node" > bin/device.js
+      - cat dist/device.js >> bin/device.js
+      - chmod +x bin/device.js
       - npm i semantic-release; npx semantic-release || true
